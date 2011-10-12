@@ -20,7 +20,7 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <cisstVector/vctFixedSizeVectorTypes.h>
 #include <cisstMultiTask/mtsInterfaceRequired.h>
-#include <cisstMicronTracker/mtsMicronTrackerToolQtComponent.h>
+#include <sawClaronMicronTracker/mtsMicronTrackerToolQtComponent.h>
 
 #include <QDir>
 #include <QString>

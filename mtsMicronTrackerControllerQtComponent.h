@@ -31,17 +31,17 @@ http://www.cisst.org/cisst/license.txt.
 #include <QList>
 #include <QPainter>
 
-#include "ui_mtsMicronTrackerControllerQtWidget.h"
+#include "mtsMicronTrackerControllerQtWidget.h"
 
 
-class mtsMicronTrackerControllerQDevice : public QObject, public mtsComponent
+class mtsMicronTrackerControllerQtComponent : public QObject, public mtsComponent
 {
     Q_OBJECT;
     CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_LOD_RUN_ERROR);
 
  public:
-    mtsMicronTrackerControllerQDevice(const std::string & taskName);
-    ~mtsMicronTrackerControllerQDevice(void) {};
+    mtsMicronTrackerControllerQtComponent(const std::string & taskName);
+    ~mtsMicronTrackerControllerQtComponent(void) {};
 
     void Configure(const std::string & CMN_UNUSED(filename) = "") {};
 
@@ -94,6 +94,6 @@ class mtsMicronTrackerControllerQDevice : public QObject, public mtsComponent
     void ScreenshotQSlot(void);
 };
 
-CMN_DECLARE_SERVICES_INSTANTIATION(mtsMicronTrackerControllerQDevice);
+CMN_DECLARE_SERVICES_INSTANTIATION(mtsMicronTrackerControllerQtComponent);
 
 #endif  // _mtsMicronTrackerControllerQDevice_h
