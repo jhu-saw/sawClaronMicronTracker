@@ -41,14 +41,6 @@ mtsMicronTracker::mtsMicronTracker(const std::string & taskName, const double pe
     IsTracking(false),
     ImageTable(10, "ImageTable")
 {
-    RGB = new svlSampleImageRGB();
-    RGB->SetSize(FrameWidth, FrameHeight);
-    ImageBufferLeft = new svlBufferSample(*RGB);
-    ImageBufferRight = new svlBufferSample(*RGB);
-
-    ImageLeft.SetSize(FrameSize);
-    ImageRight.SetSize(FrameSize);
-
     ImageTable.SetAutomaticAdvance(false);
     AddStateTable(&ImageTable);
 
@@ -201,6 +193,17 @@ void mtsMicronTracker::Startup(void)
         return;
     }
 
+    // get camera resolution and initialize buffers
+    MTC( Camera_ResolutionGet(CurrentCamera, &FrameWidth, &FrameHeight) );
+
+    RGB = new svlSampleImageRGB();
+    RGB->SetSize(FrameWidth, FrameHeight);
+    ImageBufferLeft = new svlBufferSample(*RGB);
+    ImageBufferRight = new svlBufferSample(*RGB);
+
+    ImageLeft.SetSize(FrameWidth * FrameHeight);
+    ImageRight.SetSize(FrameWidth * FrameHeight);
+
     // get calibration info
     char lines[80][80];
     int numLines;
@@ -238,9 +241,9 @@ void mtsMicronTracker::Run(void)
                                   ImageRight.Pointer()) );
             ImageTable.Advance();
 
-            svlConverter::Gray8toRGB24(ImageLeft.Pointer(), RGB->GetUCharPointer(), FrameSize);
+            svlConverter::Gray8toRGB24(ImageLeft.Pointer(), RGB->GetUCharPointer(), FrameWidth * FrameHeight);
             ImageBufferLeft->Push(RGB);
-            svlConverter::Gray8toRGB24(ImageRight.Pointer(), RGB->GetUCharPointer(), FrameSize);
+            svlConverter::Gray8toRGB24(ImageRight.Pointer(), RGB->GetUCharPointer(), FrameWidth * FrameHeight);
             ImageBufferRight->Push(RGB);
         }
     }
@@ -256,6 +259,9 @@ void mtsMicronTracker::Cleanup(void)
     MTC( Xform3D_Free(PoseXf) );
     MTC( Persistence_Free(Path) );
     Cameras_Detach();
+
+    delete ImageBufferLeft;
+    delete ImageBufferRight;
 }
 
 

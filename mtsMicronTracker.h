@@ -112,9 +112,8 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     void CalibratePivot(const mtsStdString & toolName);
     void ComputeCameraModel(const mtsStdString & pathRectificationLUT);
 
-    static const unsigned int FrameWidth = 640;
-    static const unsigned int FrameHeight = 480;
-    static const unsigned int FrameSize = FrameWidth * FrameHeight;
+    int FrameWidth;
+    int FrameHeight;
 
     std::string CameraCalibrationDir;
     std::string MarkerTemplatesDir;
