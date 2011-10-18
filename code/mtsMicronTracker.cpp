@@ -195,7 +195,8 @@ void mtsMicronTracker::Startup(void)
 
     // get camera resolution and initialize buffers
     MTC( Camera_ResolutionGet(CurrentCamera, &FrameWidth, &FrameHeight) );
-
+	CMN_LOG_CLASS_INIT_VERBOSE << "Startup: resolution is " << FrameWidth << " x "
+		                       << FrameHeight << std::endl;
     RGB = new svlSampleImageRGB();
     RGB->SetSize(FrameWidth, FrameHeight);
     ImageBufferLeft = new svlBufferSample(*RGB);

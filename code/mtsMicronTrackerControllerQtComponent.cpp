@@ -27,7 +27,6 @@ http://www.cisst.org/cisst/license.txt.
 
 CMN_IMPLEMENT_SERVICES(mtsMicronTrackerControllerQtComponent);
 
-
 mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(const std::string & taskName) :
     mtsComponent(taskName)
 {
@@ -63,9 +62,7 @@ mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(con
                      this, SLOT(RecordQSlot(bool)));
     QObject::connect(ControllerWidget.ButtonScreenshot, SIGNAL(clicked()),
                      this, SLOT(ScreenshotQSlot()));
-
 //    ControllerWidget.ButtonCaptureFrameLeft->toggle();
-
     startTimer(20);
 }
 
@@ -100,8 +97,6 @@ void mtsMicronTrackerControllerQtComponent::timerEvent(QTimerEvent * event)
     } else {
         ControllerWidget.FrameRight->clear();
     }
-
-    CentralWidget.parentWidget()->resize(0,0);
 }
 
 

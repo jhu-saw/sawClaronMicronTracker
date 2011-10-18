@@ -31,8 +31,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <QList>
 #include <QPainter>
 
-#include "mtsMicronTrackerControllerQtWidget.h"
-
+#include <sawClaronMicronTracker/mtsMicronTrackerControllerQtWidget.h>
 
 class mtsMicronTrackerControllerQtComponent : public QObject, public mtsComponent
 {
@@ -52,8 +51,8 @@ class mtsMicronTrackerControllerQtComponent : public QObject, public mtsComponen
     }
 
  protected:
-    static const unsigned int FrameWidth = 640;
-    static const unsigned int FrameHeight = 480;
+    static const unsigned int FrameWidth = 1024;
+    static const unsigned int FrameHeight = 768;
     static const unsigned int FrameSize = FrameWidth * FrameHeight;
 
     Ui::mtsMicronTrackerControllerQtWidget ControllerWidget;

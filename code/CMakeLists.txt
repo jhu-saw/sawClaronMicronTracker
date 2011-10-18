@@ -82,7 +82,7 @@ if (cisst_FOUND)
       GET_FILENAME_COMPONENT (outfile ${it} NAME_WE)
       GET_FILENAME_COMPONENT (infile ${it} ABSOLUTE)
       # the only thing we modified ...
-      SET (outfile ${CMAKE_CURRENT_BINARY_DIR}/${outfile}.h)
+      SET (outfile ${CMAKE_CURRENT_BINARY_DIR}/sawClaronMicronTracker/${outfile}.h)
       ADD_CUSTOM_COMMAND (OUTPUT ${outfile}
                           COMMAND ${QT_UIC_EXECUTABLE}
                           ARGS ${ui_options} -o ${outfile} ${infile}
@@ -115,7 +115,7 @@ if (cisst_FOUND)
   endif (CISST_HAS_QT)
 
   # create/configure file for find_package (sawClaronMicronTracker)
-  set (sawClaronMicronTracker_INCLUDE_DIR "${sawComponents_SOURCE_DIR}" "${ClaronMicronTracker_INCLUDE_DIR}")
+  set (sawClaronMicronTracker_INCLUDE_DIR "${sawComponents_SOURCE_DIR}" "${ClaronMicronTracker_INCLUDE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
   set (sawClaronMicronTracker_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
   set (sawClaronMicronTracker_LIBRARIES sawClaronMicronTracker "${ClaronMicronTracker_LIBRARIES}")
   set (sawClaronMicronTrackerQt_LIBRARIES sawClaronMicronTrackerQt)

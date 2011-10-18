@@ -8,9 +8,9 @@
   <tools>
 
     <tool name="Pointer"
-          marker="lptr" />
+          marker="1b" />
 
     <tool name="Reference"
-          marker="tool" />
+          marker="2b" />
   </tools>
 </tracker>

@@ -42,16 +42,11 @@ int main(int argc, char *argv[])
     // log configuration
     cmnLogger::SetMask(CMN_LOG_ALLOW_ALL);
     cmnLogger::SetMaskFunction(CMN_LOG_ALLOW_ALL);
+	cmnLogger::SetMaskDefaultLog(CMN_LOG_ALLOW_ALL);
     cmnLogger::AddChannel(std::cout, CMN_LOG_ALLOW_ERRORS | CMN_LOG_ALLOW_WARNINGS);
 
-    // add a log per thread
-    osaThreadedLogFile threadedLog("mtsMicronTrackerQtExample-");
-    cmnLogger::AddChannel(threadedLog, CMN_LOG_ALLOW_ALL);
-
     // set the log level of detail on select components
-    cmnLogger::SetMaskClass("mtsMicronTracker", CMN_LOG_ALLOW_ALL);
-    cmnLogger::SetMaskClass("mtsMicronTrackerControllerQtComponent", CMN_LOG_ALLOW_ALL);
-    cmnLogger::SetMaskClass("mtsMicronTrackerToolQtComponent", CMN_LOG_ALLOW_ALL);
+    cmnLogger::SetMaskClassMatching("mtsMicron", CMN_LOG_ALLOW_ALL);
 
     // create a Qt user interface
     QApplication application(argc, argv);
@@ -61,8 +56,13 @@ int main(int argc, char *argv[])
     mtsMicronTrackerControllerQtComponent * componentControllerQtComponent = new mtsMicronTrackerControllerQtComponent("componentControllerQtComponent");
 
     // configure the components
-    cmnPath searchPath = std::string(CISST_SOURCE_ROOT) + "/examples/devicesTutorial/example7";
-    componentMicronTracker->Configure(searchPath.Find("config.xml"));
+    cmnPath searchPath = std::string(CISST_SOURCE_ROOT) + "/saw/components/sawClaronMicronTracker/examples";
+	std::string fullPath = searchPath.Find("config.xml");
+	if (fullPath == "") {
+		std::cerr << "Can't find file config.xml in path: " << searchPath << std::endl;
+		return 1;
+	}
+    componentMicronTracker->Configure(fullPath);
 
     // add the components to the component manager
     mtsManagerLocal * componentManager = mtsComponentManager::GetInstance();
