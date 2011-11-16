@@ -14,7 +14,7 @@
 # create a list of libraries needed for this project
 set (REQUIRED_CISST_LIBRARIES cisstCommon cisstCommonQt cisstCommonXML
                               cisstVector cisstOSAbstraction cisstNumerical
-                              cisstMultiTask cisstParameterTypes cisstRobot
+                              cisstMultiTask cisstParameterTypes
                               cisstStereoVision)
 
 # find cisst and make sure the required libraries have been compiled
