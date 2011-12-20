@@ -26,7 +26,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsVector.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 
-#include "mtsMicronTrackerToolQtWidget.h"
+#include <sawClaronMicronTracker/mtsMicronTrackerToolQtWidget.h>
 
 
 class mtsMicronTrackerToolQtComponent : public QObject, public mtsComponent
