@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# (C) Copyright 2011 Johns Hopkins University (JHU), All Rights
+# (C) Copyright 2011-2012 Johns Hopkins University (JHU), All Rights
 # Reserved.
 #
 # --- begin cisst license - do not edit ---
@@ -67,7 +67,7 @@ if (cisst_FOUND)
                ../sawClaronMicronTrackerExport.h
                mtsMicronTracker.cpp
                ../mtsMicronTracker.h)
-
+  set_property (TARGET sawClaronMicronTracker PROPERTY FOLDER "sawClaronMicronTracker")
   target_link_libraries (sawClaronMicronTracker ${ClaronMicronTracker_LIBRARIES})
   cisst_target_link_libraries (sawClaronMicronTracker ${REQUIRED_CISST_LIBRARIES})
 
@@ -109,7 +109,7 @@ if (cisst_FOUND)
                  ../mtsMicronTrackerControllerQtComponent.h
                  mtsMicronTrackerToolQtComponent.cpp
                  ../mtsMicronTrackerToolQtComponent.h)
-
+    set_property (TARGET sawClaronMicronTrackerQt PROPERTY FOLDER "sawClaronMicronTracker")
     cisst_target_link_libraries (sawClaronMicronTrackerQt ${REQUIRED_CISST_LIBRARIES} cisstQt)
 
   endif (CISST_HAS_QT)

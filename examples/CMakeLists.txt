@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# (C) Copyright 2009-2011 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -35,6 +35,7 @@ if (cisst_FOUND)
     link_directories (${sawClaronMicronTracker_LIBRARY_DIR})
 
     add_executable (sawClaronMicronTrackerQtExample mainQt.cpp)
+    set_property (TARGET sawClaronMicronTrackerQtExample PROPERTY FOLDER "sawClaronMicronTracker")
 
     # link against non cisst libraries and cisst components
     target_link_libraries (sawClaronMicronTrackerQtExample
