@@ -61,12 +61,18 @@ if (cisst_FOUND)
           ${v3p_netlib_LIBRARY})
   endif (UNIX)
 
-  include_directories (${ClaronMicronTracker_INCLUDE_DIR})
+  # create/configure file for find_package (sawClaronMicronTracker)
+  set (sawClaronMicronTracker_INCLUDE_DIR "${sawClaronMicronTracker_SOURCE_DIR}/include" "${ClaronMicronTracker_INCLUDE_DIR}")
+  set (sawClaronMicronTracker_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
+  set (sawClaronMicronTracker_LIBRARIES sawClaronMicronTracker "${ClaronMicronTracker_LIBRARIES}")
+  set (sawClaronMicronTrackerQt_LIBRARIES sawClaronMicronTrackerQt)
+  set (sawClaronMicronTracker_HEADER_DIR "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker")
 
+  include_directories (${sawClaronMicronTracker_INCLUDE_DIR})
   add_library (sawClaronMicronTracker
-               ../sawClaronMicronTrackerExport.h
+               ${sawClaronMicronTracker_HEADER_DIR}/sawClaronMicronTrackerExport.h
                mtsMicronTracker.cpp
-               ../mtsMicronTracker.h)
+               ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTracker.h)
   set_property (TARGET sawClaronMicronTracker PROPERTY FOLDER "sawClaronMicronTracker")
   target_link_libraries (sawClaronMicronTracker ${ClaronMicronTracker_LIBRARIES})
   cisst_target_link_libraries (sawClaronMicronTracker ${REQUIRED_CISST_LIBRARIES})
@@ -94,8 +100,8 @@ if (cisst_FOUND)
     include_directories ("${CMAKE_CURRENT_BINARY_DIR}")
 
     qt4_wrap_cpp (SAW_MICRON_TRACKER_QT_COMPONENTS_GENERATED
-                  ../mtsMicronTrackerControllerQtComponent.h
-                  ../mtsMicronTrackerToolQtComponent.h
+                  ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerControllerQtComponent.h
+                  ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerToolQtComponent.h
                   )
     cisst_qt4_wrap_ui (SAW_MICRON_TRACKER_QT_WIDGETS_GENERATED
                        mtsMicronTrackerControllerQtWidget.ui
@@ -104,24 +110,32 @@ if (cisst_FOUND)
     add_library (sawClaronMicronTrackerQt
                  ${SAW_MICRON_TRACKER_QT_COMPONENTS_GENERATED}
                  ${SAW_MICRON_TRACKER_QT_WIDGETS_GENERATED}
-                 ../sawClaronMicronTrackerExportQt.h
+                 ${sawClaronMicronTracker_HEADER_DIR}/sawClaronMicronTrackerExportQt.h
                  mtsMicronTrackerControllerQtComponent.cpp
-                 ../mtsMicronTrackerControllerQtComponent.h
+                 ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerControllerQtComponent.h
                  mtsMicronTrackerToolQtComponent.cpp
-                 ../mtsMicronTrackerToolQtComponent.h)
+                 ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerToolQtComponent.h)
     set_property (TARGET sawClaronMicronTrackerQt PROPERTY FOLDER "sawClaronMicronTracker")
     cisst_target_link_libraries (sawClaronMicronTrackerQt ${REQUIRED_CISST_LIBRARIES} cisstQt)
 
   endif (CISST_HAS_QT)
 
-  # create/configure file for find_package (sawClaronMicronTracker)
-  set (sawClaronMicronTracker_INCLUDE_DIR "${sawComponents_SOURCE_DIR}" "${ClaronMicronTracker_INCLUDE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
-  set (sawClaronMicronTracker_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
-  set (sawClaronMicronTracker_LIBRARIES sawClaronMicronTracker "${ClaronMicronTracker_LIBRARIES}")
-  set (sawClaronMicronTrackerQt_LIBRARIES sawClaronMicronTrackerQt)
-
   configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/sawClaronMicronTrackerConfig.cmake.in"
                   "${sawComponents_BINARY_DIR}/sawClaronMicronTrackerConfig.cmake"
                    @ONLY@)
+
+  # Install target for headers and library
+  install (DIRECTORY
+           ${sawClaronMicronTracker_INCLUDE_DIR}/sawClaronMicronTracker
+           DESTINATION include
+           PATTERN .svn EXCLUDE)
+
+  install (TARGETS sawClaronMicronTracker
+           RUNTIME DESTINATION bin
+           LIBRARY DESTINATION lib
+           ARCHIVE DESTINATION lib)
+
+  install (FILES "${sawClaronMicronTracker_BINARY_DIR}/sawClaronMicronTrackerConfig.cmake"
+           DESTINATION "${CISST_CMAKE_INSTALL_SUFFIX}/saw")
 
 endif (cisst_FOUND)

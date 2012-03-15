@@ -56,8 +56,9 @@ int main(int argc, char *argv[])
     mtsMicronTrackerControllerQtComponent * componentControllerQtComponent = new mtsMicronTrackerControllerQtComponent("componentControllerQtComponent");
 
     // configure the components
-    cmnPath searchPath = std::string(CISST_SOURCE_ROOT) + "/saw/components/sawClaronMicronTracker/examples";
-	std::string fullPath = searchPath.Find("config.xml");
+    cmnPath searchPath(".");
+    searchPath.Add(cmnPath::GetWorkingDirectory());
+    std::string fullPath = searchPath.Find("config.xml");
 	if (fullPath == "") {
 		std::cerr << "Can't find file config.xml in path: " << searchPath << std::endl;
 		return 1;
