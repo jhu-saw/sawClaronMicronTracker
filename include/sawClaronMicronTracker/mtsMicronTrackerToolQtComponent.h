@@ -28,8 +28,9 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <sawClaronMicronTracker/mtsMicronTrackerToolQtWidget.h>
 
+#include <sawClaronMicronTracker/sawClaronMicronTrackerExportQt.h>
 
-class mtsMicronTrackerToolQtComponent : public QObject, public mtsComponent
+class CISST_EXPORT mtsMicronTrackerToolQtComponent : public QObject, public mtsComponent
 {
     Q_OBJECT;
     CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_LOD_RUN_ERROR);

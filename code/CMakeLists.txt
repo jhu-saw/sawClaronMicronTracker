@@ -117,6 +117,8 @@ if (cisst_FOUND)
                  ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerToolQtComponent.h)
     set_property (TARGET sawClaronMicronTrackerQt PROPERTY FOLDER "sawClaronMicronTracker")
     cisst_target_link_libraries (sawClaronMicronTrackerQt ${REQUIRED_CISST_LIBRARIES} cisstQt)
+    
+    set(sawClaronMicronTracker_INCLUDE_DIR "${sawClaronMicronTracker_INCLUDE_DIR};${CMAKE_CURRENT_BINARY_DIR}")
 
   endif (CISST_HAS_QT)
 
