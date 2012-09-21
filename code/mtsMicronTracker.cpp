@@ -7,7 +7,7 @@
   Author(s):  Ali Uneri
   Created on: 2009-11-06
 
-  (C) Copyright 2009 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -29,42 +29,38 @@ http://www.cisst.org/cisst/license.txt.
 #endif
 #include <sawClaronMicronTracker/mtsMicronTracker.h>
 
-CMN_IMPLEMENT_SERVICES(mtsMicronTracker);
+CMN_IMPLEMENT_SERVICES_DERIVED_ONEARG(mtsMicronTracker, mtsTaskPeriodic, mtsTaskPeriodicConstructorArg);
 
 // macro to check for and report MTC usage errors
 #define MTC(func) { int retval = func; if (retval != mtOK) CMN_LOG_CLASS_RUN_ERROR << "MTC: " << MTLastErrorString() << std::endl;};
 
 
-mtsMicronTracker::mtsMicronTracker(const std::string & taskName, const double period) :
-    mtsTaskPeriodic(taskName, period, false, 5000),
-    IsCapturing(false),
-    IsTracking(false),
-    ImageTable(10, "ImageTable")
+void mtsMicronTracker::Configure(const std::string & filename)
 {
-    ImageTable.SetAutomaticAdvance(false);
-    AddStateTable(&ImageTable);
+    IsCapturing = false;
+    IsTracking = false;
+
+    StateTable.AddData(IsCapturing, "IsCapturing");
+    StateTable.AddData(IsTracking, "IsTracking");
+
+    ImageTable = new mtsStateTable(10, "ImageTable");
+    AddStateTable(ImageTable);
+    ImageTable->SetAutomaticAdvance(false);
+    ImageTable->AddData(ImageLeft, "ImageLeft");
+    ImageTable->AddData(ImageRight, "ImageRight");
 
     mtsInterfaceProvided * provided = AddInterfaceProvided("Controller");
     if (provided) {
-        StateTable.AddData(IsCapturing, "IsCapturing");
-        StateTable.AddData(IsTracking, "IsTracking");
-        ImageTable.AddData(ImageLeft, "ImageLeft");
-        ImageTable.AddData(ImageRight, "ImageRight");
-
         provided->AddCommandWrite(&mtsMicronTracker::CalibratePivot, this, "CalibratePivot", mtsStdString());
         provided->AddCommandWrite(&mtsMicronTracker::ToggleCapturing, this, "ToggleCapturing", mtsBool());
         provided->AddCommandWrite(&mtsMicronTracker::ToggleTracking, this, "ToggleTracking", mtsBool());
         provided->AddCommandReadState(StateTable, IsCapturing, "IsCapturing");
         provided->AddCommandReadState(StateTable, IsTracking, "IsTracking");
-        provided->AddCommandReadState(ImageTable, ImageLeft, "GetCameraFrameLeft");
-        provided->AddCommandReadState(ImageTable, ImageRight, "GetCameraFrameRight");
+        provided->AddCommandReadState(*ImageTable, ImageLeft, "GetCameraFrameLeft");
+        provided->AddCommandReadState(*ImageTable, ImageRight, "GetCameraFrameRight");
         provided->AddCommandWrite(&mtsMicronTracker::ComputeCameraModel, this, "ComputeCameraModel", mtsStdString());
     }
-}
 
-
-void mtsMicronTracker::Configure(const std::string & filename)
-{
     CMN_LOG_CLASS_INIT_VERBOSE << "Configure: using " << filename << std::endl;
 
     cmnXMLPath config;
@@ -240,7 +236,7 @@ void mtsMicronTracker::Run(void)
             MTC( Camera_ImagesGet(CurrentCamera,
                                   ImageLeft.Pointer(),
                                   ImageRight.Pointer()) );
-            ImageTable.Advance();
+            ImageTable->Advance();
 
             svlConverter::Gray8toRGB24(ImageLeft.Pointer(), RGB->GetUCharPointer(), FrameWidth * FrameHeight);
             ImageBufferLeft->Push(RGB);

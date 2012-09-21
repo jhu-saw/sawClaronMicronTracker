@@ -7,7 +7,7 @@
   Author(s):  Ali Uneri
   Created on: 2009-11-06
 
-  (C) Copyright 2009 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -37,16 +37,14 @@ http://www.cisst.org/cisst/license.txt.
 #include <QMainWindow>
 
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
     // log configuration
     cmnLogger::SetMask(CMN_LOG_ALLOW_ALL);
     cmnLogger::SetMaskFunction(CMN_LOG_ALLOW_ALL);
-	cmnLogger::SetMaskDefaultLog(CMN_LOG_ALLOW_ALL);
-    cmnLogger::AddChannel(std::cout, CMN_LOG_ALLOW_ERRORS | CMN_LOG_ALLOW_WARNINGS);
-
-    // set the log level of detail on select components
-    cmnLogger::SetMaskClassMatching("mtsMicron", CMN_LOG_ALLOW_ALL);
+    cmnLogger::SetMaskDefaultLog(CMN_LOG_ALLOW_ALL);
+    cmnLogger::SetMaskClassMatching("mtsMicronTracker", CMN_LOG_ALLOW_ALL);
+    cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
 
     // create a Qt user interface
     QApplication application(argc, argv);
@@ -56,14 +54,14 @@ int main(int argc, char *argv[])
     mtsMicronTrackerControllerQtComponent * componentControllerQtComponent = new mtsMicronTrackerControllerQtComponent("componentControllerQtComponent");
 
     // configure the components
-    cmnPath searchPath(".");
+    cmnPath searchPath;
     searchPath.Add(cmnPath::GetWorkingDirectory());
-    std::string fullPath = searchPath.Find("config.xml");
-	if (fullPath == "") {
-		std::cerr << "Can't find file config.xml in path: " << searchPath << std::endl;
-		return 1;
-	}
-    componentMicronTracker->Configure(fullPath);
+    std::string configPath = searchPath.Find("configClaronMicronTracker.xml");
+    if (configPath.empty()) {
+        std::cerr << "Failed to find configuration: " << configPath << std::endl;
+        return 1;
+    }
+    componentMicronTracker->Configure(configPath);
 
     // add the components to the component manager
     mtsManagerLocal * componentManager = mtsComponentManager::GetInstance();
@@ -84,9 +82,10 @@ int main(int argc, char *argv[])
     for (unsigned int i = 0; i < componentMicronTracker->GetNumberOfTools(); i++) {
         std::string toolName = componentMicronTracker->GetToolName(i);
         mtsMicronTrackerToolQtComponent * componentToolQtComponent = new mtsMicronTrackerToolQtComponent(toolName);
-        componentControllerQtComponent->AddToolWidget(componentToolQtComponent->GetWidget(),
-                                                      componentToolQtComponent->GetMarkerProjectionLeft(),
-                                                      componentToolQtComponent->GetMarkerProjectionRight());
+        componentControllerQtComponent->AddTool(componentToolQtComponent,
+                                                componentToolQtComponent->GetWidget(),
+                                                componentToolQtComponent->GetMarkerProjectionLeft(),
+                                                componentToolQtComponent->GetMarkerProjectionRight());
         componentManager->AddComponent(componentToolQtComponent);
         componentManager->Connect(toolName, toolName,
                                   componentMicronTracker->GetName(), toolName);

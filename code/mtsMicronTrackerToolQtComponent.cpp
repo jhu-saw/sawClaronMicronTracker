@@ -7,7 +7,7 @@
   Author(s):  Ali Uneri
   Created on: 2009-10-27
 
-  (C) Copyright 2009 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -48,12 +48,10 @@ mtsMicronTrackerToolQtComponent::mtsMicronTrackerToolQtComponent(const std::stri
     // connect Qt signals to slots
     QObject::connect(ToolWidget.ButtonRecord, SIGNAL(clicked()),
                      this, SLOT(RecordQSlot()));
-
-    startTimer(20);
 }
 
 
-void mtsMicronTrackerToolQtComponent::timerEvent(QTimerEvent * event)
+void mtsMicronTrackerToolQtComponent::UpdatePositionCartesian()
 {
     MTC.GetPositionCartesian(MTC.PositionCartesian);
     MTC.GetMarkerProjectionLeft(MTC.MarkerProjectionLeft);

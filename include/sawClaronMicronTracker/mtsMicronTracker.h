@@ -7,7 +7,7 @@
   Author(s):  Ali Uneri
   Created on: 2009-11-06
 
-  (C) Copyright 2009 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -28,14 +28,13 @@ http://www.cisst.org/cisst/license.txt.
 
   \warning HdrEnabledSet is disabled, since it's removed in the new API.
 
-  \todo CalibratePivot method needs outlier filtering.
+  \todo Replace current custom video player with an svl Qt widget (mtsMicronTracker already provides an svlSampleBuffer).
   \todo ComputeCameraModel method needs error analysis.
-  \todo Consider deriving from mtsTaskContinuous using an oscillating sleep.
   \todo Mapping from markerName to markerHandle.
   \todo Refactor the method of obtaining marker projections for the controller Qt Component.
   \todo Check for mtMeasurementHazardCode using Xform3D_HazardCodeGet.
-  \todo Refactor NDISerial Qt widgets to a general "tracker" widget.
   \todo Fix/suppress _WIN32_WINNT macro redefinition warning.
+  \todo See sawNDITracker for other common tracking related todos.
 */
 
 #ifndef _mtsMicronTracker_h
@@ -75,8 +74,10 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     };
 
  public:
-    mtsMicronTracker(const std::string & taskName, const double period);
-    mtsMicronTracker(const mtsTaskPeriodicConstructorArg &arg);
+    mtsMicronTracker(const std::string & taskName, const double period) :
+        mtsTaskPeriodic(taskName, period, false, 5000) {}
+    mtsMicronTracker(const mtsTaskPeriodicConstructorArg & arg) :
+        mtsTaskPeriodic(arg) {}
     ~mtsMicronTracker(void) {};
 
     void Configure(const std::string & filename = "");
@@ -131,7 +132,7 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     mtHandle Path;
     mtsDoubleVec MarkerProjectionLeft;
 
-    mtsStateTable ImageTable;
+    mtsStateTable * ImageTable;
     mtsUCharVec ImageLeft;
     mtsUCharVec ImageRight;
     svlSampleImageRGB * RGB;
@@ -141,4 +142,4 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
 
 CMN_DECLARE_SERVICES_INSTANTIATION(mtsMicronTracker);
 
-#endif  //_mtsMicronTracker_h
+#endif  // _mtsMicronTracker_h

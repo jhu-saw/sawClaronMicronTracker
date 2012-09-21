@@ -7,7 +7,7 @@
   Author(s):  Ali Uneri
   Created on: 2009-10-29
 
-  (C) Copyright 2009 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -21,24 +21,24 @@ http://www.cisst.org/cisst/license.txt.
 #ifndef _mtsMicronTrackerControllerQDevice_h
 #define _mtsMicronTrackerControllerQDevice_h
 
+#include <QImage>
+#include <QList>
+#include <QPainter>
+#include <QTimer>
+
 #include <cisstMultiTask/mtsComponent.h>
 #include <cisstMultiTask/mtsFunctionRead.h>
 #include <cisstMultiTask/mtsFunctionVoid.h>
 #include <cisstMultiTask/mtsFunctionWrite.h>
 #include <cisstMultiTask/mtsVector.h>
-
-#include <QImage>
-#include <QList>
-#include <QPainter>
-
 #include <sawClaronMicronTracker/mtsMicronTrackerControllerQtWidget.h>
+#include <sawClaronMicronTracker/sawClaronMicronTrackerExportQt.h>  // always include last
 
-#include <sawClaronMicronTracker/sawClaronMicronTrackerExportQt.h>
 
 class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, public mtsComponent
 {
     Q_OBJECT;
-    CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_LOD_RUN_ERROR);
+    CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_ALLOW_DEFAULT);
 
  public:
     mtsMicronTrackerControllerQtComponent(const std::string & taskName);
@@ -46,7 +46,7 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
 
     void Configure(const std::string & CMN_UNUSED(filename) = "") {};
 
-    void AddToolWidget(QWidget * toolWidget, QPoint * markerLeft, QPoint * markerRight);
+    void AddTool(QObject * toolQtComponent, QWidget * toolQtWidget, QPoint * markerLeft, QPoint * markerRight);
 
     QWidget * GetWidget(void) {
         return &CentralWidget;
@@ -59,6 +59,7 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
 
     Ui::mtsMicronTrackerControllerQtWidget ControllerWidget;
     QWidget CentralWidget;
+    QTimer * Timer;
 
     struct {
         mtsFunctionWrite CalibratePivot;
@@ -86,7 +87,7 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
     QList<QPoint *> MarkersRight;
 
  public slots:
-    void timerEvent(QTimerEvent * event);
+    void UpdateFrames();
     void PaintImage(QImage & frameIndexed8, QList<QPoint *> & markers);
     void MTCCalibratePivotQSlot(void);
     void MTCComputeCameraModelQSlot(void);

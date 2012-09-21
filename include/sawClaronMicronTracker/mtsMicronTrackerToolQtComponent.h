@@ -7,7 +7,7 @@
   Author(s):  Ali Uneri
   Created on: 2009-10-27
 
-  (C) Copyright 2009 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -25,15 +25,14 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsFunctionRead.h>
 #include <cisstMultiTask/mtsVector.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
-
 #include <sawClaronMicronTracker/mtsMicronTrackerToolQtWidget.h>
+#include <sawClaronMicronTracker/sawClaronMicronTrackerExportQt.h>  // always include last
 
-#include <sawClaronMicronTracker/sawClaronMicronTrackerExportQt.h>
 
 class CISST_EXPORT mtsMicronTrackerToolQtComponent : public QObject, public mtsComponent
 {
     Q_OBJECT;
-    CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_LOD_RUN_ERROR);
+    CMN_DECLARE_SERVICES(CMN_NO_DYNAMIC_CREATION, CMN_LOG_ALLOW_DEFAULT);
 
  public:
     mtsMicronTrackerToolQtComponent(const std::string & taskName);
@@ -69,7 +68,7 @@ class CISST_EXPORT mtsMicronTrackerToolQtComponent : public QObject, public mtsC
     QPoint MarkerProjectionRight;
 
  public slots:
-    void timerEvent(QTimerEvent * event);
+    void UpdatePositionCartesian();
     void RecordQSlot(void);
 };
 
