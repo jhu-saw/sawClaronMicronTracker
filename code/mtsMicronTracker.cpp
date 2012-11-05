@@ -59,6 +59,7 @@ void mtsMicronTracker::Configure(const std::string & filename)
         provided->AddCommandReadState(*ImageTable, ImageLeft, "GetCameraFrameLeft");
         provided->AddCommandReadState(*ImageTable, ImageRight, "GetCameraFrameRight");
         provided->AddCommandWrite(&mtsMicronTracker::ComputeCameraModel, this, "ComputeCameraModel", mtsStdString());
+        provided->AddCommandWrite(&mtsMicronTracker::SetJitterCoefficient, this, "SetJitterCoefficient", mtsDouble());
     }
 
     CMN_LOG_CLASS_INIT_VERBOSE << "Configure: using " << filename << std::endl;
@@ -89,6 +90,12 @@ void mtsMicronTracker::Configure(const std::string & filename)
             AddTool(toolName, toolSerial);
         }
     }
+}
+
+
+void mtsMicronTracker::SetJitterCoefficient(const mtsDouble & coefficient)
+{
+    Markers_JitterFilterCoefficientSet(coefficient.GetData());
 }
 
 

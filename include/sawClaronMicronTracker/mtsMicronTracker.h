@@ -112,6 +112,7 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     void Track(void);
     void CalibratePivot(const mtsStdString & toolName);
     void ComputeCameraModel(const mtsStdString & pathRectificationLUT);
+    void SetJitterCoefficient(const mtsDouble & coefficient);
 
     int FrameWidth;
     int FrameHeight;
