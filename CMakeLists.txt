@@ -15,4 +15,6 @@
 project (sawClaronMicronTracker)
 
 add_subdirectory (code)
-add_subdirectory (examples)
+if(CISST_HAS_QT)
+  add_subdirectory (examples)
+endif()
