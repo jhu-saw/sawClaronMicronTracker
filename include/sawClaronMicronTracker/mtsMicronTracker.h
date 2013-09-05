@@ -43,6 +43,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstVector/vctDynamicNArray.h>
 #include <cisstVector/vctFixedSizeVectorTypes.h>
 #include <cisstMultiTask/mtsTaskPeriodic.h>
+#include <cisstMultiTask/mtsVector.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstStereoVision/svlBufferSample.h>
 #include <sawClaronMicronTracker/sawClaronMicronTrackerExport.h>  // always include last
