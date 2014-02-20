@@ -6,8 +6,8 @@
     calibration: directory containing camera calibration file
     markers: directory containing marker definitions
   -->
-  <controller calibration="C:\Program Files\Claron Technology\MicronTracker\CalibrationFiles\"
-              markers="C:\Program Files\Claron Technology\MicronTracker\Markers\" />
+  <controller calibration="/Users/sungminkim/Project/Programming/Micron/MacOSX/CalibrationFiles/"
+              markers="/Users/sungminkim/Project/Programming/Micron/MacOSX/Markers" />
 
   <!-- list of tools used -->
   <tools>
@@ -21,5 +21,15 @@
 
     <tool name="Reference"
           marker="2b" />
+        
+    <tool name="XPoint1"
+          marker="XPoint1" />
+        
+    <tool name="XPoint2"
+          marker="XPoint2" />
+          
+    <tool name="XPoint3"
+          marker="XPoint3" />
+          
   </tools>
 </tracker>

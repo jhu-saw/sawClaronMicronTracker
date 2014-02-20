@@ -253,6 +253,7 @@ void mtsMicronTracker::Run(void)
     }
     if (IsTracking) {
         Track();
+        TrackXPoint();
     }
 }
 
@@ -332,7 +333,7 @@ void mtsMicronTracker::Track(void)
     MTC( Markers_IdentifiedMarkersGet(CurrentCamera, IdentifiedMarkers) );
     const unsigned int numIdentifiedMarkers = Collection_Count(IdentifiedMarkers);
     CMN_LOG_CLASS_RUN_DEBUG << "Track: identified " << numIdentifiedMarkers << " marker(s)" << std::endl;
-
+    
     for (unsigned int i = 1; i <= numIdentifiedMarkers; i++) {
         markerHandle = Collection_Int(IdentifiedMarkers, i);
         MTC( Marker_NameGet(markerHandle, markerName, MT_MAX_STRING_LENGTH, 0) );
@@ -399,11 +400,49 @@ void mtsMicronTracker::Track(void)
                                           &(tool->MarkerProjectionRight.Y())) );
         }
     }
+    
+}
+
+void mtsMicronTracker::TrackXPoint(void)
+{
+    Tool * tool;
+    vctFrm3 XPoint;
+    
+    mtHandle IdentifiedXPoints = Collection_New();
+    MTC( Cameras_GrabFrame(NULL) );
+    MTC( XPoints_ProcessFrame(NULL) );
+    
+    MTC( XPoints_DetectedXPointsGet(NULL, IdentifiedXPoints) );
+    CMN_LOG_CLASS_RUN_DEBUG << "identified XPoints: " << Collection_Count(IdentifiedXPoints) << std::endl;
+    
+    for (int i=1; i<=Collection_Count(IdentifiedXPoints); i++) {
+        
+        // check if tool exists, generate a name and add it otherwise
+        std::stringstream name;
+        name << "XPoint" << i ;
+        std::string xpointName = name.str();
+        
+        tool = CheckTool(xpointName);
+        if (!tool) {
+            tool = AddTool(xpointName, xpointName);
+        }
+        
+        mtHandle XPointHandle = Collection_Int(IdentifiedXPoints, i);
+        MTC ( XPoint_3DPositionGet(XPointHandle, &XPoint.Translation().X(), &XPoint.Translation().Y(), &XPoint.Translation().Z()) );
+        
+        tool->TooltipPosition.Position() = XPoint;
+        tool->TooltipPosition.SetValid(true);
+        
+        CMN_LOG_CLASS_RUN_DEBUG << " XPoint" << i << ": " << XPoint.Translation().X() << ", " << XPoint.Translation().Y() << ", " << XPoint.Translation().Z() << std::endl;
+    }
+    
+    Collection_Free(IdentifiedXPoints);
 }
 
 
 void mtsMicronTracker::CalibratePivot(const mtsStdString & toolName)
 {
+    
     Tool * tool = Tools.GetItem(toolName.Data);
     CMN_LOG_CLASS_RUN_WARNING << "CalibratePivot: calibrating " << tool->Name << std::endl;
 
