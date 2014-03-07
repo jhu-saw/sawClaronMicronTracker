@@ -33,7 +33,8 @@ if (cisst_FOUND_AS_REQUIRED)
   find_path (ClaronMicronTracker_INCLUDE_DIR
              NAMES MTC.h
              PATHS "C:/Program Files/Claron Technology/MicronTracker/Dist"
-                   "C:/Program Files (x86)/Claron Technology/MicronTracker/Dist")
+                   "C:/Program Files (x86)/Claron Technology/MicronTracker/Dist"
+		   “/home/sungminkim/Project/Programming/Micron/MacOSX/MTC_3.6.5.5_MacOSX_10.6.8_Release/Dist”)
   find_library (ClaronMicronTracker_MTC_LIBRARY
                 NAMES MTC
                 HINTS ${ClaronMicronTracker_INCLUDE_DIR})
@@ -68,7 +69,10 @@ if (cisst_FOUND_AS_REQUIRED)
   set (sawClaronMicronTracker_LIBRARIES sawClaronMicronTracker "${ClaronMicronTracker_LIBRARIES}")
   set (sawClaronMicronTrackerQt_LIBRARIES sawClaronMicronTrackerQt)
 
-  include_directories (${sawClaronMicronTracker_INCLUDE_DIR} ${sawClaronMicronTracker_BINARY_DIR})
+  include_directories (${sawClaronMicronTracker_INCLUDE_DIR} 
+		       ${sawClaronMicronTracker_BINARY_DIR}
+		       “/Users/sungminkim/Project/Programming/Micron/MacOSX/MTC_3.6.5.5_MacOSX_10.6.8_Release/Dist”)
+
   set (sawClaronMicronTracker_HEADER_DIR "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker")
 
   add_library (sawClaronMicronTracker

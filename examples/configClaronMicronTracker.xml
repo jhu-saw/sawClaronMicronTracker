@@ -16,20 +16,18 @@
       name: used to name the tool component interface
       marker: marker definition file, relative to "markers" directory
     -->
-    <tool name="Pointer"
-          marker="1b" />
-
     <tool name="Reference"
-          marker="2b" />
-        
-    <tool name="XPoint1"
-          marker="XPoint1" />
-        
-    <tool name="XPoint2"
-          marker="XPoint2" />
+          marker="test1" />
           
-    <tool name="XPoint3"
-          marker="XPoint3" />
+    <tool name="Tool"
+          marker="test2" />
           
   </tools>
+  
+  <xpoints>
+      
+    <xpoint max_number="6" />
+      
+  </xpoints>
+      
 </tracker>

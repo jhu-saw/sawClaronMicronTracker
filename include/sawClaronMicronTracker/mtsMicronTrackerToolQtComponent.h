@@ -58,14 +58,18 @@ class CISST_EXPORT mtsMicronTrackerToolQtComponent : public QObject, public mtsC
         mtsFunctionRead GetPositionCartesian;
         mtsFunctionRead GetMarkerProjectionLeft;
         mtsFunctionRead GetMarkerProjectionRight;
-
+        mtsFunctionRead GetMarkerTemplateTrackingPositions;
+        
         prmPositionCartesianGet PositionCartesian;
         mtsDoubleVec MarkerProjectionLeft;
         mtsDoubleVec MarkerProjectionRight;
+        std::vector<vct3> MarkerTemplateTrackingPositions;
+        
     } MTC;
 
     QPoint MarkerProjectionLeft;
     QPoint MarkerProjectionRight;
+
 
  public slots:
     void UpdatePositionCartesian();

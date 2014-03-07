@@ -36,6 +36,10 @@ mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(con
     FrameIndexed8 = QImage(FrameWidth, FrameHeight, QImage::Format_Indexed8);
     ControllerWidget.setupUi(&CentralWidget);
     Timer = new QTimer(this);
+    
+    MTC.XPoints.resize(50);
+    MTC.XPointsProjectionLeft.resize(50);
+    MTC.XPointsProjectionRight.resize(50);
 
     mtsInterfaceRequired * required = AddInterfaceRequired("Controller");
     if (required) {
@@ -45,6 +49,10 @@ mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(con
         required->AddFunction("GetCameraFrameLeft", MTC.GetFrameLeft);
         required->AddFunction("GetCameraFrameRight", MTC.GetFrameRight);
         required->AddFunction("ComputeCameraModel", MTC.ComputeCameraModel);
+        required->AddFunction("GetXPointsMaxNum", MTC.GetXPointsMaxNum);
+        required->AddFunction("GetXPoints", MTC.GetXPoints);
+        required->AddFunction("GetXPointsProjectionLeft", MTC.GetXPointsProjectionLeft);
+        required->AddFunction("GetXPointsProjectionRight", MTC.GetXPointsProjectionRight);
     }
 
     required = AddInterfaceRequired("DataCollector");
@@ -52,6 +60,7 @@ mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(con
         required->AddFunction("StartCollection", Collector.Start);
         required->AddFunction("StopCollection", Collector.Stop);
     }
+    
 
     // connect Qt signals to slots
     QObject::connect(ControllerWidget.ButtonCalibratePivot, SIGNAL(clicked()),
@@ -85,10 +94,23 @@ void mtsMicronTrackerControllerQtComponent::AddTool(QObject * toolQtComponent, Q
 
 void mtsMicronTrackerControllerQtComponent::UpdateFrames()
 {
+    MTC.GetXPointsMaxNum(MTC.XPointsMaxNum);
+    
+    if (MTC.XPointsMaxNum > 0)
+        MTC.XPoints.resize(MTC.XPointsMaxNum);
+    
     if (ControllerWidget.ButtonCaptureFrameLeft->isChecked()) {
         MTC.GetFrameLeft(MTC.FrameLeft);
         memcpy(FrameIndexed8.bits(), MTC.FrameLeft.Pointer(), FrameSize);
-        PaintImage(FrameIndexed8, MarkersLeft);
+        
+        if (MTC.XPointsMaxNum > 0) {
+            MTC.XPointsProjectionLeft.resize(MTC.XPointsMaxNum);
+            MTC.GetXPointsProjectionLeft(MTC.XPointsProjectionLeft);
+            PaintImageWithXpoints(FrameIndexed8, MarkersLeft, MTC.XPointsProjectionLeft);
+        }
+        else
+            PaintImage(FrameIndexed8, MarkersLeft);
+        
         ControllerWidget.FrameLeft->setPixmap(QPixmap::fromImage(FrameRGB));
     } else {
         ControllerWidget.FrameLeft->clear();
@@ -98,7 +120,15 @@ void mtsMicronTrackerControllerQtComponent::UpdateFrames()
     if (ControllerWidget.ButtonCaptureFrameRight->isChecked()) {
         MTC.GetFrameRight(MTC.FrameRight);
         memcpy(FrameIndexed8.bits(), MTC.FrameRight.Pointer(), FrameSize);
-        PaintImage(FrameIndexed8, MarkersRight);
+        
+        if (MTC.XPointsMaxNum > 0) {
+            MTC.XPointsProjectionRight.resize(MTC.XPointsMaxNum);
+            MTC.GetXPointsProjectionRight(MTC.XPointsProjectionRight);
+            PaintImageWithXpoints(FrameIndexed8, MarkersRight, MTC.XPointsProjectionRight);
+        }
+        else
+            PaintImage(FrameIndexed8, MarkersRight);
+        
         ControllerWidget.FrameRight->setPixmap(QPixmap::fromImage(FrameRGB));
     } else {
         ControllerWidget.FrameRight->clear();
@@ -124,6 +154,31 @@ void mtsMicronTrackerControllerQtComponent::PaintImage(QImage & frameIndexed8, Q
     }
 }
 
+void mtsMicronTrackerControllerQtComponent::PaintImageWithXpoints(QImage & frameIndexed8, QList<QPoint *> & markers, std::vector<vct3> & xpoints)
+{
+    FrameRGB = frameIndexed8.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    const size_t numTools = ControllerWidget.LayoutTools->count();
+    for (unsigned int i = 0; i < numTools; i++) {
+        MarkerPainter.begin(&FrameRGB);
+        MarkerPainter.setPen(Qt::red);
+        MarkerPainter.setBrush(Qt::red);  // paint inside the ellipse
+        MarkerPosition = QPoint(markers[i]->x(), markers[i]->y());
+        MarkerPainter.drawEllipse(MarkerPosition, 2, 2);
+        MarkerPosition += QPoint(3, -3);  // label offset
+        MarkerPainter.setFont(QFont(MarkerPainter.font().family(), 10, QFont::DemiBold));
+        MarkerPainter.drawText(MarkerPosition, MarkerNames[i]);
+        
+        if (MTC.XPointsMaxNum > 0) {
+            for (unsigned int j = 0; j < (unsigned int)MTC.XPointsMaxNum; j++) {
+                MarkerPainter.setPen(Qt::green);
+                MarkerPainter.setBrush(Qt::green);
+                MarkerPosition = QPoint(xpoints[j].X(), xpoints[j].Y());
+                MarkerPainter.drawEllipse(MarkerPosition, 2, 2);
+            }
+         }
+        MarkerPainter.end();
+    }
+}
 
 void mtsMicronTrackerControllerQtComponent::MTCCalibratePivotQSlot(void)
 {

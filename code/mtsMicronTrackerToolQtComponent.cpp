@@ -40,9 +40,9 @@ mtsMicronTrackerToolQtComponent::mtsMicronTrackerToolQtComponent(const std::stri
 
     mtsInterfaceRequired * required = AddInterfaceRequired(taskName);
     if (required) {
-       required->AddFunction("GetPositionCartesian", MTC.GetPositionCartesian);
-       required->AddFunction("GetMarkerProjectionLeft", MTC.GetMarkerProjectionLeft);
-       required->AddFunction("GetMarkerProjectionRight", MTC.GetMarkerProjectionRight);
+        required->AddFunction("GetPositionCartesian", MTC.GetPositionCartesian);
+        required->AddFunction("GetMarkerProjectionLeft", MTC.GetMarkerProjectionLeft);
+        required->AddFunction("GetMarkerProjectionRight", MTC.GetMarkerProjectionRight);
     }
 
     // connect Qt signals to slots
@@ -57,6 +57,7 @@ void mtsMicronTrackerToolQtComponent::UpdatePositionCartesian()
     MTC.GetMarkerProjectionLeft(MTC.MarkerProjectionLeft);
     MTC.GetMarkerProjectionRight(MTC.MarkerProjectionRight);
 
+    
     if (MTC.PositionCartesian.Valid()) {
         ToolWidget.PositionX->setNum(MTC.PositionCartesian.Position().Translation().X());
         ToolWidget.PositionY->setNum(MTC.PositionCartesian.Position().Translation().Y());
@@ -72,7 +73,7 @@ void mtsMicronTrackerToolQtComponent::UpdatePositionCartesian()
         MarkerProjectionLeft.setX(0.0);
         MarkerProjectionLeft.setY(0.0);
         MarkerProjectionRight.setX(0.0);
-        MarkerProjectionRight.setY(0.0);
+        MarkerProjectionRight.setY(0.0);;
     }
 }
 

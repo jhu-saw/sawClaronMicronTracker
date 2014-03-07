@@ -18,8 +18,8 @@ http://www.cisst.org/cisst/license.txt.
 --- end cisst license ---
 */
 
-#ifndef _mtsMicronTrackerControllerQDevice_h
-#define _mtsMicronTrackerControllerQDevice_h
+#ifndef _mtsMicronTrackerControllerQtComponent_h
+#define _mtsMicronTrackerControllerQtComponent_h
 
 #include <QImage>
 #include <QList>
@@ -67,17 +67,27 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
         mtsFunctionWrite Track;
         mtsFunctionRead GetFrameLeft;
         mtsFunctionRead GetFrameRight;
+        
+        mtsFunctionRead GetXPointsMaxNum;
+        mtsFunctionRead GetXPoints;
+        mtsFunctionRead GetXPointsProjectionLeft;
+        mtsFunctionRead GetXPointsProjectionRight;
         mtsFunctionWrite ComputeCameraModel;
 
         mtsUCharVec FrameLeft;
         mtsUCharVec FrameRight;
+        
+        int XPointsMaxNum;
+        std::vector<vct3> XPoints;
+        std::vector<vct3> XPointsProjectionLeft;
+        std::vector<vct3> XPointsProjectionRight;
     } MTC;
 
     struct {
         mtsFunctionVoid Start;
         mtsFunctionVoid Stop;
     } Collector;
-
+    
     QImage FrameIndexed8;
     QImage FrameRGB;
     QPainter MarkerPainter;
@@ -85,10 +95,12 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
     QList<QString> MarkerNames;
     QList<QPoint *> MarkersLeft;
     QList<QPoint *> MarkersRight;
-
+    
  public slots:
     void UpdateFrames();
     void PaintImage(QImage & frameIndexed8, QList<QPoint *> & markers);
+    void PaintImageWithXpoints(QImage & frameIndexed8, QList<QPoint *> & markers,
+                               std::vector<vct3> & xpoints);
     void MTCCalibratePivotQSlot(void);
     void MTCComputeCameraModelQSlot(void);
     void MTCTrackQSlot(bool toggled);

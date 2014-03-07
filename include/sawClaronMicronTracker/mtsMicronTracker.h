@@ -40,10 +40,12 @@ http://www.cisst.org/cisst/license.txt.
 #ifndef _mtsMicronTracker_h
 #define _mtsMicronTracker_h
 
+#include <vector>
 #include <cisstVector/vctDynamicNArray.h>
 #include <cisstVector/vctFixedSizeVectorTypes.h>
 #include <cisstMultiTask/mtsTaskPeriodic.h>
 #include <cisstMultiTask/mtsVector.h>
+#include <cisstMultiTask/mtsTransformationTypes.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstStereoVision/svlBufferSample.h>
 #include <sawClaronMicronTracker/sawClaronMicronTrackerExport.h>  // always include last
@@ -70,6 +72,10 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
         prmPositionCartesianGet MarkerPosition;
         mtsDoubleVec MarkerProjectionLeft;
         mtsDoubleVec MarkerProjectionRight;
+        std::vector<vct3> MarkerTemplateTrackingPositions;
+        std::vector<vct3> MarkerTemplatePositions;
+        std::vector<vct3> MarkerTemplateProjectionLeft;
+        std::vector<vct3> MarkerTemplateProjectionRight;
 
         vct3 TooltipOffset;
     };
@@ -127,6 +133,11 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
 
     mtsBool IsCapturing;
     mtsBool IsTracking;
+    
+    int XPointsMaxNum;
+    std::vector<vct3> XPoints;
+    std::vector<vct3> XPointsProjectionLeft;
+    std::vector<vct3> XPointsProjectionRight;
 
     mtHandle CurrentCamera;
     mtHandle IdentifyingCamera;
@@ -134,7 +145,7 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     mtHandle PoseXf;
     mtHandle Path;
     mtsDoubleVec MarkerProjectionLeft;
-
+    
     mtsStateTable * ImageTable;
     mtsUCharVec ImageLeft;
     mtsUCharVec ImageRight;
