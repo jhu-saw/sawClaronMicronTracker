@@ -156,11 +156,13 @@ mtsMicronTracker::Tool * mtsMicronTracker::AddTool(const std::string & name, con
             StateTable.AddData(tool->MarkerProjectionLeft, name + "MarkerProjectionLeft");
             StateTable.AddData(tool->MarkerProjectionRight, name + "MarkerProjectionRight");
             StateTable.AddData(tool->MarkerTemplatePositions, name + "MarkerTemplatePositions");
+            StateTable.AddData(tool->MarkerTemplateTrackingPositions, name + "MarkerTemplateTrackingPositions");
 
             tool->Interface->AddCommandReadState(StateTable, tool->TooltipPosition, "GetPositionCartesian");
             tool->Interface->AddCommandReadState(StateTable, tool->MarkerProjectionLeft, "GetMarkerProjectionLeft");
             tool->Interface->AddCommandReadState(StateTable, tool->MarkerProjectionRight, "GetMarkerProjectionRight");
             tool->Interface->AddCommandReadState(StateTable, tool->MarkerTemplatePositions, "GetMarkerTemplatePositions");
+            tool->Interface->AddCommandReadState(StateTable, tool->MarkerTemplateTrackingPositions, "GetMarkerTemplateTrackingPositions");
         }
     }
     return tool;
@@ -418,7 +420,93 @@ void mtsMicronTracker::Track(void)
                                           &(tool->MarkerProjectionRight.Y())) );
 
         }
+        // get the tracking data of template points
+        mtHandle IdentifiedFacets = Collection_New();
+        MTC( Marker_IdentifiedFacetsGet(markerHandle, CurrentCamera, false, IdentifiedFacets) );
+        
+        mtHandle lvHandle = Vector_New();
+        mtHandle svHandle = Vector_New();
+        MTC( Facet_IdentifiedVectorsGet(Collection_Int(IdentifiedFacets, 1), lvHandle, svHandle) );
+         
+        double endPt[6];
+        double endPt1[6];
+        MTC( Vector_EndPosGet(lvHandle, endPt) );
+        MTC( Vector_EndPosGet(svHandle, endPt1) );
+        
+        for ( unsigned int j = 0; j < 2; j++) {
+            for ( unsigned int k = 0; k < 3; k++) {
+                tool->MarkerTemplateTrackingPositions[3 * j + k] = endPt[3 * j + k];
+                
+                if ( ( (endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2]) ) && ( (endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2]) ) ) {
+                    
+                    tool->MarkerTemplateTrackingPositions[3 * 2 + k] = endPt1[3 * j + k];
+                }
+            }
+            CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [" << j << "]:  " << tool->MarkerTemplateTrackingPositions[3 * j] << ",   " << tool->MarkerTemplateTrackingPositions[3 * j + 1] << ",   " << tool->MarkerTemplateTrackingPositions[3 * j + 2] << std::endl;
+        }
+        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplateTrackingPositions[3 * 2] << ",   " << tool->MarkerTemplatePositions[3 * 2 + 1] << ",   " << tool->MarkerTemplatePositions[3 * 2 + 2] << std::endl;
+        
+        // To get Template data from the markers
+        mtHandle TemplateFacets = Collection_New();
+        MTC( Marker_TemplateFacetsGet(markerHandle, &TemplateFacets) );
+        
+        mtHandle facetHandle = Collection_Int(TemplateFacets, 1);
+        
+        double templatePos[12];
+        MTC( Facet_TemplatePositionsGet(facetHandle, templatePos) );
+        
+        for ( unsigned int j = 0; j < 2; j++) {
+            for ( unsigned int k = 0; k < 3; k++) {
+                tool->MarkerTemplatePositions[3 * j + k] = endPt[3 * j + k];
+                
+                if ( ( (endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2]) ) && ( (endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2]) ) ) {
+                    
+                    tool->MarkerTemplatePositions[3 * 2 + k] = endPt1[3 * j + k];
+                    
+                }
+            }
+            CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [" << j << "]:  " << tool->MarkerTemplatePositions[3 * j] << ",   " << tool->MarkerTemplatePositions[3 * j + 1] << ",   " << tool->MarkerTemplatePositions[3 * j + 2] << std::endl;
+        }
+        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplatePositions[3 * 2] << ",   " << tool->MarkerTemplatePositions[3 * 2 + 1] << ",   " << tool->MarkerTemplatePositions[3 * 2 + 2] << std::endl;
+        
+         
+/*        for ( unsigned int j = 0; j < 2; j++) {
+            for ( unsigned int k = 0; k < 3; k++) {
+                tool->MarkerTemplateTrackingPositions[j].at(k) = endPt[3 * j + k];
+         
+                if ( ( (endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2]) ) && ( (endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2]) ) ) {
+         
+                    tool->MarkerTemplateTrackingPositions[2].at(k) = endPt1[3 * j + k];
+                }
+            }
+        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [" << j << "]:  " << tool->MarkerTemplateTrackingPositions[j].X() << ",   " << tool->MarkerTemplateTrackingPositions[j].Y() << ",   " << tool->MarkerTemplateTrackingPositions[j].Z()<< std::endl;
+        }
+        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplateTrackingPositions[2].X() << ",   " << tool->MarkerTemplatePositions[2].Y() << ",   " << tool->MarkerTemplatePositions[2].Z()<< std::endl;
 
+         
+        // To get Template data from the markers
+        mtHandle TemplateFacets = Collection_New();
+        MTC( Marker_TemplateFacetsGet(markerHandle, &TemplateFacets) );
+        
+        mtHandle facetHandle = Collection_Int(TemplateFacets, 1);
+         
+        double * templatePos = new double[12];
+        MTC( Facet_TemplatePositionsGet(facetHandle, templatePos) );
+         
+        for ( unsigned int j = 0; j < 2; j++) {
+            for ( unsigned int k = 0; k < 3; k++) {
+                tool->MarkerTemplatePositions[j].at(k) = endPt[3 * j + k];
+         
+                if ( ( (endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2]) ) && ( (endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2]) ) ) {
+         
+                    tool->MarkerTemplatePositions[2].at(k) = endPt1[3 * j + k];
+         
+                }
+            }
+        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [" << j << "]:  " << tool->MarkerTemplatePositions[j].X() << ",   " << tool->MarkerTemplatePositions[j].Y() << ",   " << tool->MarkerTemplatePositions[j].Z()<< std::endl;
+        }
+        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplatePositions[2].X() << ",   " << tool->MarkerTemplatePositions[2].Y() << ",   " << tool->MarkerTemplatePositions[2].Z()<< std::endl;
+*/
     }
 }
 
@@ -447,8 +535,8 @@ void mtsMicronTracker::TrackXPoint(void)
             mtHandle svHandle = Vector_New();
             MTC( Facet_IdentifiedVectorsGet(Collection_Int(IdentifiedFacets, 1), lvHandle, svHandle) );
             
-            double * endPt = new double[6];
-            double * endPt1 = new double[6];
+            double endPt[6];
+            double endPt1[6];
             MTC( Vector_EndPosGet(lvHandle, endPt) );
             MTC( Vector_EndPosGet(svHandle, endPt1) );
             
@@ -492,12 +580,7 @@ void mtsMicronTracker::TrackXPoint(void)
             
             for (unsigned int r = 0; r < 4; r++)
                 CMN_LOG_CLASS_RUN_DEBUG << "template positions " << "[" << r << "]:   " << templatePos[3 * r] << ",   " << templatePos[3 * r + 1] << ",   " << templatePos[3 * r + 2] << std::endl;
-            
-            
-            delete endPt;
-            delete endPt1;
-            delete templatePos;
-        }
+         }
     }
     
     mtHandle IdentifiedXPoints = Collection_New();
@@ -824,8 +907,10 @@ mtsMicronTracker::Tool::Tool(void) :
     MarkerProjectionLeft.SetAll(0.0);
     MarkerProjectionRight.SetSize(2);
     MarkerProjectionRight.SetAll(0.0);
-    MarkerTemplatePositions.resize(3);
-    MarkerTemplatePositions.clear();
+    MarkerTemplateTrackingPositions.SetSize(9);
+    MarkerTemplateTrackingPositions.SetAll(0.0);
+    MarkerTemplatePositions.SetSize(9);
+    MarkerTemplatePositions.SetAll(0.0);
     MarkerTemplateProjectionLeft.resize(3);
     MarkerTemplateProjectionLeft.clear();
     MarkerTemplateProjectionRight.resize(3);

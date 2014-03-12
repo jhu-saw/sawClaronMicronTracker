@@ -33,8 +33,7 @@ if (cisst_FOUND_AS_REQUIRED)
   find_path (ClaronMicronTracker_INCLUDE_DIR
              NAMES MTC.h
              PATHS "C:/Program Files/Claron Technology/MicronTracker/Dist"
-                   "C:/Program Files (x86)/Claron Technology/MicronTracker/Dist"
-		   “/home/sungminkim/Project/Programming/Micron/MacOSX/MTC_3.6.5.5_MacOSX_10.6.8_Release/Dist”)
+                   "C:/Program Files (x86)/Claron Technology/MicronTracker/Dist")
   find_library (ClaronMicronTracker_MTC_LIBRARY
                 NAMES MTC
                 HINTS ${ClaronMicronTracker_INCLUDE_DIR})

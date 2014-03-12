@@ -28,18 +28,14 @@ if (cisst_FOUND)
   # load cisst configuration
   include (${CISST_USE_FILE})
 
-  # sawOpenIGTLink has been compiled within cisst, we should find it automatically  cisst_find_saw_component (sawOpenIGTLink REQUIRED)  # sawOpenIGTLink has been compiled within cisst, we should find it automatically  if (sawOpenIGTLink_FOUND)      # sawOpenIGTLink configuration    include_directories (${sawOpenIGTLink_INCLUDE_DIR})    link_directories (${sawOpenIGTLink_LIBRARY_DIR})  endif (sawOpenIGTLink_FOUND)
-
   # sawClaronMicronTracker has been compiled within cisst, we should find it automatically
   cisst_find_saw_component (sawClaronMicronTracker REQUIRED)
 
   if (sawClaronMicronTracker_FOUND)
 
     # sawClaronMicronTracker configuration
-    include_directories (${sawClaronMicronTracker_INCLUDE_DIR}
-			 ${sawOpenIGTLink_INCLUDE_DIR})
-    link_directories (${sawClaronMicronTracker_LIBRARY_DIR}
-		      ${sawOpenIGTLink_LIBRARY_DIR})
+    include_directories (${sawClaronMicronTracker_INCLUDE_DIR})
+    link_directories (${sawClaronMicronTracker_LIBRARY_DIR})
 
     add_executable (sawClaronMicronTrackerQtExample mainQt.cpp)
     set_property (TARGET sawClaronMicronTrackerQtExample PROPERTY FOLDER "sawClaronMicronTracker")
@@ -48,7 +44,6 @@ if (cisst_FOUND)
     target_link_libraries (sawClaronMicronTrackerQtExample
                            ${sawClaronMicronTracker_LIBRARIES}
                            ${sawClaronMicronTrackerQt_LIBRARIES}
-			   ${sawOpenIGTLink_LIBRARIES}
                            ${QT_LIBRARIES}
                          )
 

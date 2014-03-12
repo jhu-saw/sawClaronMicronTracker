@@ -72,8 +72,9 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
         prmPositionCartesianGet MarkerPosition;
         mtsDoubleVec MarkerProjectionLeft;
         mtsDoubleVec MarkerProjectionRight;
-        std::vector<vct3> MarkerTemplateTrackingPositions;
-        std::vector<vct3> MarkerTemplatePositions;
+        
+        mtsDoubleVec MarkerTemplateTrackingPositions;
+        mtsDoubleVec MarkerTemplatePositions;
         std::vector<vct3> MarkerTemplateProjectionLeft;
         std::vector<vct3> MarkerTemplateProjectionRight;
 
