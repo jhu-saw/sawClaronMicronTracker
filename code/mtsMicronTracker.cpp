@@ -79,25 +79,21 @@ void mtsMicronTracker::Configure(const std::string & filename)
     config.GetXMLValue("/tracker/controller", "@markers", MarkerTemplatesDir);
 
     // add tools
-    int maxNumTools = 100;
-    std::string toolName;
-    std::string toolSerial, toolSerialLast;
-    std::string toolDefinition;
+    int numberOfTools = 0;
+    config.Query("count(/tracker/tools/*)", numberOfTools);
+    std::string toolName, toolSerial, toolDefinition;
 
-    for (int i = 0; i < maxNumTools; i++) {
+    for (int i = 0; i < numberOfTools; i++) {
         std::stringstream context;
-        context << "/tracker/tools/tool[" << i << "]";
+        context << "/tracker/tools/tool[" << i+1 << "]";  // XML is one-based, adding one here
         config.GetXMLValue(context.str().c_str(), "@name", toolName, "");
         if (toolName.empty()) {
             continue;
         }
         config.GetXMLValue(context.str().c_str(), "@marker", toolSerial);
-        if (toolSerial != toolSerialLast) {
-            toolSerialLast = toolSerial;
-            AddTool(toolName, toolSerial);
-        }
+        AddTool(toolName, toolSerial);
     }
-    
+
     std::stringstream context;
     context << "/tracker/xpoints/xpoint";
     config.GetXMLValue(context.str().c_str(), "@max_number", XPointsMaxNum);
