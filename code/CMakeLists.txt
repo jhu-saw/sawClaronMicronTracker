@@ -31,7 +31,8 @@ if (cisst_FOUND_AS_REQUIRED)
   # MicronTracker library
   find_path (ClaronMicronTracker_INCLUDE_DIR
              NAMES MTC.h
-             PATHS "C:/Program Files/Claron Technology/MicronTracker/Dist"
+             PATHS "C:/Program Files/Claron Technology/MicronTracker/Dist64"
+                   "C:/Program Files/Claron Technology/MicronTracker/Dist"
                    "C:/Program Files (x86)/Claron Technology/MicronTracker/Dist")
   find_library (ClaronMicronTracker_MTC_LIBRARY
                 NAMES MTC
@@ -67,10 +68,7 @@ if (cisst_FOUND_AS_REQUIRED)
   set (sawClaronMicronTracker_LIBRARIES sawClaronMicronTracker "${ClaronMicronTracker_LIBRARIES}")
   set (sawClaronMicronTrackerQt_LIBRARIES sawClaronMicronTrackerQt)
 
-  include_directories (${sawClaronMicronTracker_INCLUDE_DIR} 
-		       ${sawClaronMicronTracker_BINARY_DIR}
-		       “/Users/sungminkim/Project/Programming/Micron/MacOSX/MTC_3.6.5.5_MacOSX_10.6.8_Release/Dist”)
-
+  include_directories (${sawClaronMicronTracker_INCLUDE_DIR} ${sawClaronMicronTracker_BINARY_DIR})
   set (sawClaronMicronTracker_HEADER_DIR "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker")
 
   add_library (sawClaronMicronTracker
@@ -133,8 +131,7 @@ if (cisst_FOUND_AS_REQUIRED)
   # Install target for headers and library
   install (DIRECTORY
            "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker"
-           DESTINATION include
-           PATTERN .svn EXCLUDE)
+           DESTINATION include)
 
   install (TARGETS sawClaronMicronTracker
            RUNTIME DESTINATION bin
