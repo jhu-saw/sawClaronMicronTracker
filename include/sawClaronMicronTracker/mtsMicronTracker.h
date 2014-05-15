@@ -114,13 +114,13 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
 
     void InitComponent(void);  // called from constructor
 
-    void ToggleCapturing(const mtsBool & toggle);
-    void ToggleTracking(const mtsBool & toggle);
+    void ToggleCapturing(const bool & toggle);
+    void ToggleTracking(const bool & toggle);
     void Track(void);
     void TrackXPoint(void);
-    void CalibratePivot(const mtsStdString & toolName);
-    void ComputeCameraModel(const mtsStdString & pathRectificationLUT);
-    void SetJitterCoefficient(const mtsDouble & coefficient);
+    void CalibratePivot(const std::string & toolName);
+    void ComputeCameraModel(const std::string & pathRectificationLUT);
+    void SetJitterCoefficient(const double & coefficient);
 
     int FrameWidth;
     int FrameHeight;
@@ -131,8 +131,8 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     typedef cmnNamedMap<Tool> ToolsType;
     ToolsType Tools;
 
-    mtsBool IsCapturing;
-    mtsBool IsTracking;
+    bool IsCapturing;
+    bool IsTracking;
     
     int XPointsMaxNum;
     std::vector<vct3> XPoints;

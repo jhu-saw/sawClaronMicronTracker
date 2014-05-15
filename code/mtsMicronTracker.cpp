@@ -51,13 +51,12 @@ void mtsMicronTracker::Configure(const std::string & filename)
     ImageTable->SetAutomaticAdvance(false);
     ImageTable->AddData(ImageLeft, "ImageLeft");
     ImageTable->AddData(ImageRight, "ImageRight");
-    
 
     mtsInterfaceProvided * provided = AddInterfaceProvided("Controller");
     if (provided) {
-        provided->AddCommandWrite(&mtsMicronTracker::CalibratePivot, this, "CalibratePivot", mtsStdString());
-        provided->AddCommandWrite(&mtsMicronTracker::ToggleCapturing, this, "ToggleCapturing", mtsBool());
-        provided->AddCommandWrite(&mtsMicronTracker::ToggleTracking, this, "ToggleTracking", mtsBool());
+        provided->AddCommandWrite(&mtsMicronTracker::CalibratePivot, this, "CalibratePivot");
+        provided->AddCommandWrite(&mtsMicronTracker::ToggleCapturing, this, "ToggleCapturing");
+        provided->AddCommandWrite(&mtsMicronTracker::ToggleTracking, this, "ToggleTracking");
         provided->AddCommandReadState(StateTable, IsCapturing, "IsCapturing");
         provided->AddCommandReadState(StateTable, IsTracking, "IsTracking");
         provided->AddCommandReadState(StateTable, XPointsMaxNum, "GetXPointsMaxNum");
@@ -66,8 +65,8 @@ void mtsMicronTracker::Configure(const std::string & filename)
         provided->AddCommandReadState(StateTable, XPointsProjectionRight, "GetXPointsProjectionRight");
         provided->AddCommandReadState(*ImageTable, ImageLeft, "GetCameraFrameLeft");
         provided->AddCommandReadState(*ImageTable, ImageRight, "GetCameraFrameRight");
-        provided->AddCommandWrite(&mtsMicronTracker::ComputeCameraModel, this, "ComputeCameraModel", mtsStdString());
-        provided->AddCommandWrite(&mtsMicronTracker::SetJitterCoefficient, this, "SetJitterCoefficient", mtsDouble());
+        provided->AddCommandWrite(&mtsMicronTracker::ComputeCameraModel, this, "ComputeCameraModel");
+        provided->AddCommandWrite(&mtsMicronTracker::SetJitterCoefficient, this, "SetJitterCoefficient");
     }
 
     CMN_LOG_CLASS_INIT_VERBOSE << "Configure: using " << filename << std::endl;
@@ -109,9 +108,9 @@ void mtsMicronTracker::Configure(const std::string & filename)
 }
 
 
-void mtsMicronTracker::SetJitterCoefficient(const mtsDouble & coefficient)
+void mtsMicronTracker::SetJitterCoefficient(const double & coefficient)
 {
-    Markers_JitterFilterCoefficientSet(coefficient.GetData());
+    Markers_JitterFilterCoefficientSet(coefficient);
 }
 
 
@@ -308,9 +307,9 @@ mtHandle mtsMicronTracker::FrameToXfHandle(vctFrm3 & frame)
     return PoseXf;
 }
 
-void mtsMicronTracker::ToggleCapturing(const mtsBool & toggle)
+void mtsMicronTracker::ToggleCapturing(const bool & toggle)
 {
-    if (toggle.Data) {
+    if (toggle) {
         IsCapturing = true;
         CMN_LOG_CLASS_INIT_VERBOSE << "ToggleCapturing: capturing is on" << std::endl;
     } else {
@@ -320,9 +319,9 @@ void mtsMicronTracker::ToggleCapturing(const mtsBool & toggle)
 }
 
 
-void mtsMicronTracker::ToggleTracking(const mtsBool & toggle)
+void mtsMicronTracker::ToggleTracking(const bool & toggle)
 {
-    if (toggle.Data) {
+    if (toggle) {
         IsTracking = true;
         CMN_LOG_CLASS_INIT_VERBOSE << "ToggleTracking: tracking is on" << std::endl;
     } else {
@@ -614,10 +613,10 @@ void mtsMicronTracker::TrackXPoint(void)
 }
 
 
-void mtsMicronTracker::CalibratePivot(const mtsStdString & toolName)
+void mtsMicronTracker::CalibratePivot(const std::string & toolName)
 {
     
-    Tool * tool = Tools.GetItem(toolName.Data);
+    Tool * tool = Tools.GetItem(toolName);
     CMN_LOG_CLASS_RUN_WARNING << "CalibratePivot: calibrating " << tool->Name << std::endl;
 
 #if CISST_HAS_CISSTNETLIB
@@ -686,9 +685,9 @@ void mtsMicronTracker::CalibratePivot(const mtsStdString & toolName)
 }
 
 
-void mtsMicronTracker::ComputeCameraModel(const mtsStdString & pathRectificationLUT)
+void mtsMicronTracker::ComputeCameraModel(const std::string & pathRectificationLUT)
 {
-    CMN_LOG_CLASS_RUN_WARNING << "ComputeCameraModel: exporting rectification LUT to " << pathRectificationLUT.Data << std::endl;
+    CMN_LOG_CLASS_RUN_WARNING << "ComputeCameraModel: exporting rectification LUT to " << pathRectificationLUT << std::endl;
 
 #if CISST_HAS_CISSTNETLIB
     int resolutionX, resolutionY;
@@ -878,7 +877,7 @@ void mtsMicronTracker::ComputeCameraModel(const mtsStdString & pathRectification
     }
 
     std::ofstream file;
-    file.open(pathRectificationLUT.Data.c_str(), std::ios::out);
+    file.open(pathRectificationLUT.c_str(), std::ios::out);
     file << str_resolution.str() << "\n"
          << str_ind_new.str() << "\n"
          << str_ind_1.str() << "\n"
