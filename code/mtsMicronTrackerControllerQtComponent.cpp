@@ -23,6 +23,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstOSAbstraction/osaGetTime.h>
 #include <cisstMultiTask/mtsInterfaceRequired.h>
 #include <sawClaronMicronTracker/mtsMicronTrackerControllerQtComponent.h>
+#include <ui_mtsMicronTrackerControllerQtWidget.h>
 
 CMN_IMPLEMENT_SERVICES(mtsMicronTrackerControllerQtComponent);
 
@@ -30,10 +31,12 @@ CMN_IMPLEMENT_SERVICES(mtsMicronTrackerControllerQtComponent);
 mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(const std::string & taskName) :
     mtsComponent(taskName)
 {
+    ControllerWidget = new Ui::mtsMicronTrackerControllerQtWidget();
+    ControllerWidget->setupUi(&CentralWidget);
+
     MTC.FrameLeft.SetSize(FrameSize);
     MTC.FrameRight.SetSize(FrameSize);
     FrameIndexed8 = QImage(FrameWidth, FrameHeight, QImage::Format_Indexed8);
-    ControllerWidget.setupUi(&CentralWidget);
     Timer = new QTimer(this);
     
     MTC.XPoints.resize(50);
@@ -62,15 +65,15 @@ mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(con
     
 
     // connect Qt signals to slots
-    QObject::connect(ControllerWidget.ButtonCalibratePivot, SIGNAL(clicked()),
+    QObject::connect(ControllerWidget->ButtonCalibratePivot, SIGNAL(clicked()),
                      this, SLOT(MTCCalibratePivotQSlot()));
-    QObject::connect(ControllerWidget.ButtonComputeCameraModel, SIGNAL(clicked()),
+    QObject::connect(ControllerWidget->ButtonComputeCameraModel, SIGNAL(clicked()),
                      this, SLOT(MTCComputeCameraModelQSlot()));
-    QObject::connect(ControllerWidget.ButtonTrack, SIGNAL(toggled(bool)),
+    QObject::connect(ControllerWidget->ButtonTrack, SIGNAL(toggled(bool)),
                      this, SLOT(MTCTrackQSlot(bool)));
-    QObject::connect(ControllerWidget.ButtonRecord, SIGNAL(toggled(bool)),
+    QObject::connect(ControllerWidget->ButtonRecord, SIGNAL(toggled(bool)),
                      this, SLOT(RecordQSlot(bool)));
-    QObject::connect(ControllerWidget.ButtonScreenshot, SIGNAL(clicked()),
+    QObject::connect(ControllerWidget->ButtonScreenshot, SIGNAL(clicked()),
                      this, SLOT(ScreenshotQSlot()));
     QObject::connect(this->Timer, SIGNAL(timeout()),
                      this, SLOT(UpdateFrames()));
@@ -79,8 +82,8 @@ mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(con
 
 void mtsMicronTrackerControllerQtComponent::AddTool(QObject * toolQtComponent, QWidget * toolQtWidget, QPoint * markerLeft, QPoint * markerRight)
 {
-    ControllerWidget.LayoutTools->addWidget(toolQtWidget);
-    ControllerWidget.BoxTools->addItem(toolQtWidget->windowTitle());
+    ControllerWidget->LayoutTools->addWidget(toolQtWidget);
+    ControllerWidget->BoxTools->addItem(toolQtWidget->windowTitle());
 
     MarkerNames.append(toolQtWidget->windowTitle());
     MarkersLeft.append(markerLeft);
@@ -98,7 +101,7 @@ void mtsMicronTrackerControllerQtComponent::UpdateFrames()
     if (MTC.XPointsMaxNum > 0)
         MTC.XPoints.resize(MTC.XPointsMaxNum);
     
-    if (ControllerWidget.ButtonCaptureFrameLeft->isChecked()) {
+    if (ControllerWidget->ButtonCaptureFrameLeft->isChecked()) {
         MTC.GetFrameLeft(MTC.FrameLeft);
         memcpy(FrameIndexed8.bits(), MTC.FrameLeft.Pointer(), FrameSize);
         
@@ -110,13 +113,13 @@ void mtsMicronTrackerControllerQtComponent::UpdateFrames()
         else
             PaintImage(FrameIndexed8, MarkersLeft);
         
-        ControllerWidget.FrameLeft->setPixmap(QPixmap::fromImage(FrameRGB));
+        ControllerWidget->FrameLeft->setPixmap(QPixmap::fromImage(FrameRGB));
     } else {
-        ControllerWidget.FrameLeft->clear();
+        ControllerWidget->FrameLeft->clear();
         CentralWidget.parentWidget()->resize(0,0);
     }
 
-    if (ControllerWidget.ButtonCaptureFrameRight->isChecked()) {
+    if (ControllerWidget->ButtonCaptureFrameRight->isChecked()) {
         MTC.GetFrameRight(MTC.FrameRight);
         memcpy(FrameIndexed8.bits(), MTC.FrameRight.Pointer(), FrameSize);
         
@@ -128,9 +131,9 @@ void mtsMicronTrackerControllerQtComponent::UpdateFrames()
         else
             PaintImage(FrameIndexed8, MarkersRight);
         
-        ControllerWidget.FrameRight->setPixmap(QPixmap::fromImage(FrameRGB));
+        ControllerWidget->FrameRight->setPixmap(QPixmap::fromImage(FrameRGB));
     } else {
-        ControllerWidget.FrameRight->clear();
+        ControllerWidget->FrameRight->clear();
         CentralWidget.parentWidget()->resize(0,0);
     }
 }
@@ -139,7 +142,7 @@ void mtsMicronTrackerControllerQtComponent::UpdateFrames()
 void mtsMicronTrackerControllerQtComponent::PaintImage(QImage & frameIndexed8, QList<QPoint *> & markers)
 {
     FrameRGB = frameIndexed8.convertToFormat(QImage::Format_ARGB32_Premultiplied);
-    const size_t numTools = ControllerWidget.LayoutTools->count();
+    const size_t numTools = ControllerWidget->LayoutTools->count();
     for (unsigned int i = 0; i < numTools; i++) {
         MarkerPainter.begin(&FrameRGB);
         MarkerPainter.setPen(Qt::red);
@@ -156,7 +159,7 @@ void mtsMicronTrackerControllerQtComponent::PaintImage(QImage & frameIndexed8, Q
 void mtsMicronTrackerControllerQtComponent::PaintImageWithXpoints(QImage & frameIndexed8, QList<QPoint *> & markers, std::vector<vct3> & xpoints)
 {
     FrameRGB = frameIndexed8.convertToFormat(QImage::Format_ARGB32_Premultiplied);
-    const size_t numTools = ControllerWidget.LayoutTools->count();
+    const size_t numTools = ControllerWidget->LayoutTools->count();
     for (unsigned int i = 0; i < numTools; i++) {
         MarkerPainter.begin(&FrameRGB);
         MarkerPainter.setPen(Qt::red);
@@ -181,7 +184,7 @@ void mtsMicronTrackerControllerQtComponent::PaintImageWithXpoints(QImage & frame
 
 void mtsMicronTrackerControllerQtComponent::MTCCalibratePivotQSlot(void)
 {
-    mtsStdString toolName = ControllerWidget.BoxTools->currentText().toStdString();
+    mtsStdString toolName = ControllerWidget->BoxTools->currentText().toStdString();
     MTC.CalibratePivot(mtsStdString(toolName));
 }
 
@@ -216,8 +219,8 @@ void mtsMicronTrackerControllerQtComponent::RecordQSlot(bool toggled)
 
 void mtsMicronTrackerControllerQtComponent::ScreenshotQSlot(void)
 {
-    QPixmap leftCamera = QPixmap::grabWidget(ControllerWidget.FrameLeft);
-    QPixmap rightCamera = QPixmap::grabWidget(ControllerWidget.FrameRight);
+    QPixmap leftCamera = QPixmap::grabWidget(ControllerWidget->FrameLeft);
+    QPixmap rightCamera = QPixmap::grabWidget(ControllerWidget->FrameRight);
 
     std::string dateTime;
     osaGetDateTimeString(dateTime);

@@ -20,13 +20,18 @@ http://www.cisst.org/cisst/license.txt.
 #ifndef _mtsMicronTrackerToolQtComponent_h
 #define _mtsMicronTrackerToolQtComponent_h
 
+#include <QObject>
+#include <QWidget>
+
 #include <cisstMultiTask/mtsComponent.h>
 #include <cisstMultiTask/mtsFunctionRead.h>
 #include <cisstMultiTask/mtsVector.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
-#include <sawClaronMicronTracker/mtsMicronTrackerToolQtWidget.h>
 #include <sawClaronMicronTracker/sawClaronMicronTrackerExportQt.h>  // always include last
 
+namespace Ui {
+    class mtsMicronTrackerToolQtWidget;
+}
 
 class CISST_EXPORT mtsMicronTrackerToolQtComponent : public QObject, public mtsComponent
 {
@@ -50,7 +55,7 @@ class CISST_EXPORT mtsMicronTrackerToolQtComponent : public QObject, public mtsC
     }
 
  protected:
-    Ui::mtsMicronTrackerToolQtWidget ToolWidget;
+    Ui::mtsMicronTrackerToolQtWidget * ToolWidget;
     QWidget CentralWidget;
 
     struct {

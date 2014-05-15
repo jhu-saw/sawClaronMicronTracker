@@ -20,6 +20,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstVector/vctFixedSizeVectorTypes.h>
 #include <cisstMultiTask/mtsInterfaceRequired.h>
 #include <sawClaronMicronTracker/mtsMicronTrackerToolQtComponent.h>
+#include <ui_mtsMicronTrackerToolQtWidget.h>
 
 #include <QDir>
 #include <QString>
@@ -30,12 +31,13 @@ CMN_IMPLEMENT_SERVICES(mtsMicronTrackerToolQtComponent);
 mtsMicronTrackerToolQtComponent::mtsMicronTrackerToolQtComponent(const std::string & taskName) :
     mtsComponent(taskName)
 {
+    ToolWidget = new Ui::mtsMicronTrackerToolQtWidget();
+    ToolWidget->setupUi(&CentralWidget);
+    ToolWidget->ToolGroup->setTitle(QString::fromStdString(taskName));
+    CentralWidget.setWindowTitle(QString::fromStdString(taskName));
+
     MTC.MarkerProjectionLeft.SetSize(2);
     MTC.MarkerProjectionRight.SetSize(2);
-
-    ToolWidget.setupUi(&CentralWidget);
-    ToolWidget.ToolGroup->setTitle(QString::fromStdString(taskName));
-    CentralWidget.setWindowTitle(QString::fromStdString(taskName));
 
     mtsInterfaceRequired * required = AddInterfaceRequired(taskName);
     if (required) {
@@ -45,7 +47,7 @@ mtsMicronTrackerToolQtComponent::mtsMicronTrackerToolQtComponent(const std::stri
     }
 
     // connect Qt signals to slots
-    QObject::connect(ToolWidget.ButtonRecord, SIGNAL(clicked()),
+    QObject::connect(ToolWidget->ButtonRecord, SIGNAL(clicked()),
                      this, SLOT(RecordQSlot()));
 }
 
@@ -58,17 +60,17 @@ void mtsMicronTrackerToolQtComponent::UpdatePositionCartesian()
 
     
     if (MTC.PositionCartesian.Valid()) {
-        ToolWidget.PositionX->setNum(MTC.PositionCartesian.Position().Translation().X());
-        ToolWidget.PositionY->setNum(MTC.PositionCartesian.Position().Translation().Y());
-        ToolWidget.PositionZ->setNum(MTC.PositionCartesian.Position().Translation().Z());
+        ToolWidget->PositionX->setNum(MTC.PositionCartesian.Position().Translation().X());
+        ToolWidget->PositionY->setNum(MTC.PositionCartesian.Position().Translation().Y());
+        ToolWidget->PositionZ->setNum(MTC.PositionCartesian.Position().Translation().Z());
         MarkerProjectionLeft.setX(MTC.MarkerProjectionLeft.X());
         MarkerProjectionLeft.setY(MTC.MarkerProjectionLeft.Y());
         MarkerProjectionRight.setX(MTC.MarkerProjectionRight.X());
         MarkerProjectionRight.setY(MTC.MarkerProjectionRight.Y());
     } else {
-        ToolWidget.PositionX->setNum(0.0);
-        ToolWidget.PositionY->setNum(0.0);
-        ToolWidget.PositionZ->setNum(0.0);
+        ToolWidget->PositionX->setNum(0.0);
+        ToolWidget->PositionY->setNum(0.0);
+        ToolWidget->PositionZ->setNum(0.0);
         MarkerProjectionLeft.setX(0.0);
         MarkerProjectionLeft.setY(0.0);
         MarkerProjectionRight.setX(0.0);

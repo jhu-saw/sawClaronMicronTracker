@@ -24,15 +24,18 @@ http://www.cisst.org/cisst/license.txt.
 #include <QList>
 #include <QPainter>
 #include <QTimer>
+#include <QWidget>
 
 #include <cisstMultiTask/mtsComponent.h>
 #include <cisstMultiTask/mtsFunctionRead.h>
 #include <cisstMultiTask/mtsFunctionVoid.h>
 #include <cisstMultiTask/mtsFunctionWrite.h>
 #include <cisstMultiTask/mtsVector.h>
-#include <sawClaronMicronTracker/mtsMicronTrackerControllerQtWidget.h>
 #include <sawClaronMicronTracker/sawClaronMicronTrackerExportQt.h>  // always include last
 
+namespace Ui {
+    class mtsMicronTrackerControllerQtWidget;
+}
 
 class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, public mtsComponent
 {
@@ -56,7 +59,7 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
     static const unsigned int FrameHeight = 768;
     static const unsigned int FrameSize = FrameWidth * FrameHeight;
 
-    Ui::mtsMicronTrackerControllerQtWidget ControllerWidget;
+    Ui::mtsMicronTrackerControllerQtWidget * ControllerWidget;
     QWidget CentralWidget;
     QTimer * Timer;
 
