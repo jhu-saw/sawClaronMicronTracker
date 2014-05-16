@@ -71,7 +71,7 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
         prmPositionCartesianGet MarkerPosition;
         mtsDoubleVec MarkerProjectionLeft;
         mtsDoubleVec MarkerProjectionRight;
-        
+
         mtsDoubleVec MarkerTemplateTrackingPositions;
         mtsDoubleVec MarkerTemplatePositions;
         std::vector<vct3> MarkerTemplateProjectionLeft;
@@ -82,11 +82,12 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
 
  public:
     mtsMicronTracker(const std::string & taskName, const double period) :
-        mtsTaskPeriodic(taskName, period, false, 5000) {}
+        mtsTaskPeriodic(taskName, period, false, 5000) { Construct(); }
     mtsMicronTracker(const mtsTaskPeriodicConstructorArg & arg) :
-        mtsTaskPeriodic(arg) {}
+        mtsTaskPeriodic(arg) { Construct(); }
     ~mtsMicronTracker(void) {};
 
+    void Construct(void);
     void Configure(const std::string & filename = "");
     void Startup(void);
     void Run(void);
@@ -133,7 +134,7 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
 
     bool IsCapturing;
     bool IsTracking;
-    
+
     int XPointsMaxNum;
     std::vector<vct3> XPoints;
     std::vector<vct3> XPointsProjectionLeft;
@@ -145,7 +146,7 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     mtHandle PoseXf;
     mtHandle Path;
     mtsDoubleVec MarkerProjectionLeft;
-    
+
     mtsStateTable * ImageTable;
     mtsUCharVec ImageLeft;
     mtsUCharVec ImageRight;

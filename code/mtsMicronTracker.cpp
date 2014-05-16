@@ -34,7 +34,7 @@ CMN_IMPLEMENT_SERVICES_DERIVED_ONEARG(mtsMicronTracker, mtsTaskPeriodic, mtsTask
 #define MTC(func) { int retval = func; if (retval != mtOK) CMN_LOG_CLASS_RUN_ERROR << "MTC: " << MTLastErrorString() << std::endl;};
 
 
-void mtsMicronTracker::Configure(const std::string & filename)
+void mtsMicronTracker::Construct(void)
 {
     IsCapturing = false;
     IsTracking = false;
@@ -68,7 +68,11 @@ void mtsMicronTracker::Configure(const std::string & filename)
         provided->AddCommandWrite(&mtsMicronTracker::ComputeCameraModel, this, "ComputeCameraModel");
         provided->AddCommandWrite(&mtsMicronTracker::SetJitterCoefficient, this, "SetJitterCoefficient");
     }
+}
 
+
+void mtsMicronTracker::Configure(const std::string & filename)
+{
     CMN_LOG_CLASS_INIT_VERBOSE << "Configure: using " << filename << std::endl;
     cmnXMLPath config;
     config.SetInputSource(filename);
