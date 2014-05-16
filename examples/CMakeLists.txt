@@ -47,17 +47,18 @@ if (cisst_FOUND)
                            ${QT_LIBRARIES}
                          )
 
-    # copy configuration XML to the executable directory
-    add_custom_command (TARGET sawClaronMicronTrackerQtExample
-                        POST_BUILD
-                        COMMAND ${CMAKE_COMMAND}
-                        ARGS -E copy
-                             ${CMAKE_CURRENT_SOURCE_DIR}/configClaronMicronTracker.xml
-                             ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/configClaronMicronTracker.xml
-                        COMMENT "sawClaronMicronTrackerQtExample: copy configuration XML to the executable directory")
-
     # link against cisst libraries (and dependencies)
     cisst_target_link_libraries (sawClaronMicronTrackerQtExample ${REQUIRED_CISST_LIBRARIES})
+
+    add_custom_command (TARGET sawClaronMicronTrackerQtExample
+                        POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} ARGS -E copy
+                                ${CMAKE_CURRENT_SOURCE_DIR}/configClaronMicronTracker.xml
+                                ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/configClaronMicronTracker.xml
+                        COMMAND ${CMAKE_COMMAND} ARGS -E copy
+                                ${CMAKE_CURRENT_SOURCE_DIR}/mainPython.py
+                                ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/mainPython.py
+                        COMMENT "sawClaronMicronTrackerQtExample: copying files to the executable directory")
 
   endif (sawClaronMicronTracker_FOUND)
 
