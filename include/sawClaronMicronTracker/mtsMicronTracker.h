@@ -45,6 +45,7 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsTaskPeriodic.h>
 #include <cisstMultiTask/mtsVector.h>
 #include <cisstMultiTask/mtsTransformationTypes.h>
+#include <cisstOSAbstraction/osaGetTime.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <cisstStereoVision/svlBufferSample.h>
 #include <sawClaronMicronTracker/sawClaronMicronTrackerExport.h>  // always include last
@@ -121,7 +122,10 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     void TrackXPoint(void);
     void CalibratePivot(const std::string & toolName);
     void ComputeCameraModel(const std::string & pathRectificationLUT);
+    void SetJitterFilterEnabled(const mtsBool & flag);
     void SetJitterCoefficient(const double & coefficient);
+    void SetKalmanFilterEnabled(const mtsBool & flag);
+
 
     int FrameWidth;
     int FrameHeight;

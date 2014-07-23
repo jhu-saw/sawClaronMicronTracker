@@ -66,7 +66,9 @@ void mtsMicronTracker::Construct(void)
         provided->AddCommandReadState(*ImageTable, ImageLeft, "GetCameraFrameLeft");
         provided->AddCommandReadState(*ImageTable, ImageRight, "GetCameraFrameRight");
         provided->AddCommandWrite(&mtsMicronTracker::ComputeCameraModel, this, "ComputeCameraModel");
+        provided->AddCommandWrite(&mtsMicronTracker::SetJitterFilterEnabled, this, "SetJitterFilterEnabled", mtsBool());
         provided->AddCommandWrite(&mtsMicronTracker::SetJitterCoefficient, this, "SetJitterCoefficient");
+        provided->AddCommandWrite(&mtsMicronTracker::SetKalmanFilterEnabled, this, "SetKalmanFilterEnabled", mtsBool());
     }
 }
 
@@ -106,12 +108,33 @@ void mtsMicronTracker::Configure(const std::string & filename)
     XPointsProjectionRight.resize(XPointsMaxNum);
 }
 
+void mtsMicronTracker::SetJitterFilterEnabled(const mtsBool & flag)
+{
+    Markers_JitterFilterEnabledSet(flag.GetData());
+    
+    bool status_JitterFilter = Markers_JitterFilterEnabled();
+    
+    if (status_JitterFilter == true)
+        std::cout << "Jitter filter is enabled" << std::endl;
+    else
+        std::cout << "Jitter filter is disabled" << std::endl;
+}
 
 void mtsMicronTracker::SetJitterCoefficient(const double & coefficient)
 {
     Markers_JitterFilterCoefficientSet(coefficient);
 }
 
+void mtsMicronTracker::SetKalmanFilterEnabled(const mtsBool & flag)
+{
+    Markers_KalmanFilterEnabledSet(flag.GetData());
+    bool status_KalmanFilter = Markers_KalmanFilterEnabled();
+    
+    if (status_KalmanFilter == true)
+        std::cout << "Kalman filter is enabled" << std::endl;
+    else
+        std::cout << "Kalman filter is disabled" << std::endl;
+}
 
 mtsMicronTracker::Tool * mtsMicronTracker::CheckTool(const std::string & serialNumber)
 {
@@ -268,6 +291,12 @@ void mtsMicronTracker::Run(void)
             ImageBufferRight->Push(RGB);
         }
     }
+    mtMeasurementHazardCode hazardCode = Camera_LastFrameThermalHazard(CurrentCamera);
+    if (hazardCode == mtCameraWarmingUp)
+        std::cout << "Camera is not yet thermally stable." << std::endl;
+    else if (hazardCode != mtCameraWarmingUp)
+        std::cout << "Camera is thermally stable." << std::endl;
+
     if (IsTracking) {
         Track();
         TrackXPoint();
