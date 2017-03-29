@@ -1,7 +1,6 @@
 #
 #
-# (C) Copyright 2011-2012 Johns Hopkins University (JHU), All Rights
-# Reserved.
+# (C) Copyright 2011-2017 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -127,7 +126,7 @@ if (cisst_FOUND_AS_REQUIRED)
 
   configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/sawClaronMicronTrackerConfig.cmake.in"
                   "${sawClaronMicronTracker_BINARY_DIR}/sawClaronMicronTrackerConfig.cmake"
-                   @ONLY@)
+                   @ONLY)
 
   # Install target for headers and library
   install (DIRECTORY
