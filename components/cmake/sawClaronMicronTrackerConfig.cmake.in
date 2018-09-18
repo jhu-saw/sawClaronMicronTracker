@@ -1,0 +1,34 @@
+#
+# Author(s):  Anton Deguet
+# Created on: 2018-09-18
+#
+# (C) Copyright 2011-2016 Johns Hopkins University (JHU), All Rights Reserved.
+#
+
+set (sawClaronMicronTracker_VERSION_MAJOR "@sawClaronMicronTracker_VERSION_MAJOR@")
+set (sawClaronMicronTracker_VERSION_MINOR "@sawClaronMicronTracker_VERSION_MINOR@")
+set (sawClaronMicronTracker_VERSION_PATCH "@sawClaronMicronTracker_VERSION_PATCH@")
+set (sawClaronMicronTracker_VERSION "@sawClaronMicronTracker_VERSION@")
+
+# figure out if this file is where it was configured (build tree) or
+# not (installed tree)
+set (sawClaronMicronTracker_CMAKE_CONFIG_FILE "@sawClaronMicronTracker_CMAKE_CONFIG_FILE@")
+get_filename_component (THIS_FILE_PATH
+                        ${CMAKE_CURRENT_LIST_FILE}
+                        REALPATH)
+
+if ("${sawClaronMicronTracker_CMAKE_CONFIG_FILE}" STREQUAL "${THIS_FILE_PATH}")
+  # we're using the build directories
+  set (sawClaronMicronTracker_INCLUDE_DIR "@sawClaronMicronTracker_INCLUDE_DIR@")
+  set (sawClaronMicronTracker_LIBRARY_DIR "@sawClaronMicronTracker_LIBRARY_DIR@")
+else ()
+  # try to find the install dir, we know the install is using
+  # share/sawClaronMicronTracker so we can go ../..
+  set (RELATIVE_INSTALL_DIR "${THIS_FILE_PATH}/../..")
+  get_filename_component (ABSOLUTE_INSTALL_DIR "${RELATIVE_INSTALL_DIR}" ABSOLUTE)
+  # set directories using the install dir
+  set (sawClaronMicronTracker_INCLUDE_DIR "${ABSOLUTE_INSTALL_DIR}/include")
+  set (sawClaronMicronTracker_LIBRARY_DIR "${ABSOLUTE_INSTALL_DIR}/lib")
+endif ()
+
+set (sawClaronMicronTracker_LIBRARIES   "@sawClaronMicronTracker_LIBRARIES@")

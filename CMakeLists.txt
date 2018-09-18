@@ -11,14 +11,8 @@
 #
 # --- end cisst license ---
 
-cmake_minimum_required (VERSION 2.6.2)
+cmake_minimum_required (VERSION 2.8)
 
-project (sawClaronMicronTracker)
+add_subdirectory (components)
+add_subdirectory (examples)
 
-# find cisst to obtain configuration flags
-find_package (cisst REQUIRED cisstCommon)
-
-add_subdirectory (code)
-if(CISST_HAS_QT)
-  add_subdirectory (examples)
-endif()
