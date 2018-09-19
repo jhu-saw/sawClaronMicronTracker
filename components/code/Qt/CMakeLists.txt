@@ -31,24 +31,26 @@ if (cisst_FOUND_AS_REQUIRED)
   # for Qt generated header files
   include_directories (${CMAKE_CURRENT_BINARY_DIR})
   if (CISST_HAS_QT4)
-    qt4_wrap_cpp (SAW_MICRON_TRACKER_QT_COMPONENTS_GENERATED
+    qt4_wrap_cpp (QT_WRAPPED_CPP
                   ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerControllerQtComponent.h
                   ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerToolQtComponent.h)
-    qt4_wrap_ui (SAW_MICRON_TRACKER_QT_WIDGETS_GENERATED
+    qt4_wrap_ui (QT_WRAPPED_UI
                  mtsMicronTrackerControllerQtWidget.ui
                  mtsMicronTrackerToolQtWidget.ui)
   else (CISST_HAS_QT4)
-    set (CMAKE_AUTOMOC ON)
+    set (CMAKE_AUTOMOC ON) # This is to generate appropriate .moc files (for .h)
+    set (CMAKE_AUTOUIC ON) # This is to generate appropriate .uic files (for .ui)
+    set (CMAKE_AUTORRC ON) # This is to generate appropriate .rrc files (for .qrc)
   endif (CISST_HAS_QT4)
 
-  add_library (sawClaronMicronTrackerQt
-               ${SAW_MICRON_TRACKER_QT_COMPONENTS_GENERATED}
-               ${SAW_MICRON_TRACKER_QT_WIDGETS_GENERATED}
-               ${sawClaronMicronTracker_HEADER_DIR}/sawClaronMicronTrackerExportQt.h
-               mtsMicronTrackerControllerQtComponent.cpp
+  add_library (sawClaronMicronTrackerQt               
+               ${sawClaronMicronTracker_HEADER_DIR}/sawClaronMicronTrackerExportQt.h                              
+               ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerToolQtComponent.h
                ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerControllerQtComponent.h
+               mtsMicronTrackerControllerQtComponent.cpp
                mtsMicronTrackerToolQtComponent.cpp
-               ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerToolQtComponent.h)
+               ${QT_WRAPPED_CPP}
+               ${QT_WRAPPED_UI})
 
   set_property (TARGET sawClaronMicronTrackerQt PROPERTY FOLDER "sawClaronMicronTracker")
   cisst_target_link_libraries (sawClaronMicronTrackerQt ${REQUIRED_CISST_LIBRARIES})

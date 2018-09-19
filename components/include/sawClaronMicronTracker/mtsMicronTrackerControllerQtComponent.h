@@ -63,8 +63,7 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
     QWidget CentralWidget;
     QTimer * Timer;
 
-    struct {
-        mtsFunctionWrite CalibratePivot;
+    struct {        
         mtsFunctionWrite Capture;
         mtsFunctionWrite Track;
         mtsFunctionRead GetFrameLeft;
@@ -73,8 +72,7 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
         mtsFunctionRead GetXPointsMaxNum;
         mtsFunctionRead GetXPoints;
         mtsFunctionRead GetXPointsProjectionLeft;
-        mtsFunctionRead GetXPointsProjectionRight;
-        mtsFunctionWrite ComputeCameraModel;
+        mtsFunctionRead GetXPointsProjectionRight;        
 
         mtsUCharVec FrameLeft;
         mtsUCharVec FrameRight;
@@ -84,11 +82,6 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
         std::vector<vct3> XPointsProjectionLeft;
         std::vector<vct3> XPointsProjectionRight;
     } MTC;
-
-    struct {
-        mtsFunctionVoid Start;
-        mtsFunctionVoid Stop;
-    } Collector;
     
     QImage FrameIndexed8;
     QImage FrameRGB;
@@ -102,11 +95,8 @@ class CISST_EXPORT mtsMicronTrackerControllerQtComponent : public QObject, publi
     void UpdateFrames();
     void PaintImage(QImage & frameIndexed8, QList<QPoint *> & markers);
     void PaintImageWithXpoints(QImage & frameIndexed8, QList<QPoint *> & markers,
-                               std::vector<vct3> & xpoints);
-    void MTCCalibratePivotQSlot(void);
-    void MTCComputeCameraModelQSlot(void);
-    void MTCTrackQSlot(bool toggled);
-    void RecordQSlot(bool toggled);
+                               std::vector<vct3> & xpoints);    
+    void MTCTrackQSlot(bool toggled);    
     void ScreenshotQSlot(void);
 };
 

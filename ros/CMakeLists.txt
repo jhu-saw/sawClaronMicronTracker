@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2015-2016 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2015-2018 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -25,22 +25,22 @@ find_package (catkin REQUIRED
               roslib
               )
 
+# create a list of required cisst libraries
+set (REQUIRED_CISST_LIBRARIES cisstCommon
+                              cisstCommonQt
+                              cisstCommonXML
+                              cisstVector
+                              cisstNumerical
+                              cisstOSAbstraction
+                              cisstMultiTask
+                              cisstParameterTypes)
+
 # find cisst and make sure the required libraries have been compiled
-set (REQUIRED_CISST_LIBRARIES
-     cisstCommon
-     cisstCommonQt
-     cisstVector
-     cisstVectorQt
-     cisstOSAbstraction
-     cisstMultiTask
-     cisstMultiTaskQt
-     cisstParameterTypes
-     cisstQt)
+find_package (cisst 1.0.9 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
-find_package (cisst REQUIRED ${REQUIRED_CISST_LIBRARIES})
+if (cisst_FOUND)
 
-if (cisst_FOUND_AS_REQUIRED)
-
+  # load cisst configuration
   include (${CISST_USE_FILE})
 
   # include_directories(include)
@@ -51,24 +51,26 @@ if (cisst_FOUND_AS_REQUIRED)
   catkin_package (INCLUDE_DIRS "${CATKIN_DEVEL_PREFIX}/include"
                   CATKIN_DEPENDS cisst_ros_bridge geometry_msgs roscpp std_msgs)
 
-  # sawAtracsysFusionTrack has been compiled within cisst, we should find it automatically
-  find_package (sawClaronMicronTracker 1.1.0)
+  # sawClaronMicronTracker has been compiled within cisst, we should find it automatically
+  find_package (sawClaronMicronTracker 1.0.0 REQUIRED)
 
   if (sawClaronMicronTracker_FOUND)
 
-    include_directories (${CATKIN_DEVEL_PREFIX}/include
-                         ${sawClaronMicronTracker_INCLUDE_DIR})
-
+    # sawClaronMicronTracker configuration
+    include_directories (${sawClaronMicronTracker_INCLUDE_DIR})
     link_directories (${sawClaronMicronTracker_LIBRARY_DIR})
 
-    add_executable (micron_tracker_json src/micron_tracker_json.cpp)
-    target_link_libraries (micron_tracker_json
-                           ${sawClaronMicronTracker_LIBRARIES}
-                           ${catkin_LIBRARIES})
-    cisst_target_link_libraries (micron_tracker_json ${REQUIRED_CISST_LIBRARIES})
+    add_executable (micron_tracker micron_tracker.cpp)
 
-  else (sawClaronMicronTracker_FOUND)
-    message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawAtracsysFusionTrack")
+    # link against non cisst libraries and saw components
+    target_link_libraries (micron_tracker
+                           ${sawClaronMicronTracker_LIBRARIES}
+                           ${catkin_LIBRARIES}
+                           )
+
+    # link against cisst libraries (and dependencies)
+    cisst_target_link_libraries (micron_tracker ${REQUIRED_CISST_LIBRARIES})
+
   endif (sawClaronMicronTracker_FOUND)
 
-endif (cisst_FOUND_AS_REQUIRED)
+endif (cisst_FOUND)

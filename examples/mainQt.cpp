@@ -25,8 +25,6 @@ http://www.cisst.org/cisst/license.txt.
 
 #include <cisstCommon/cmnPath.h>
 #include <cisstCommon/cmnUnits.h>
-#include <cisstOSAbstraction/osaThreadedLogFile.h>
-#include <cisstMultiTask/mtsCollectorState.h>
 #include <cisstMultiTask/mtsTaskManager.h>
 #include <sawClaronMicronTracker/mtsMicronTracker.h>
 #include <sawClaronMicronTracker/mtsMicronTrackerControllerQtComponent.h>
@@ -43,7 +41,7 @@ int main(int argc, char * argv[])
     cmnLogger::SetMaskFunction(CMN_LOG_ALLOW_ALL);
     cmnLogger::SetMaskDefaultLog(CMN_LOG_ALLOW_ALL);
     cmnLogger::SetMaskClassMatching("mtsMicronTracker", CMN_LOG_ALLOW_ALL);
-    cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
+    cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ALL);
 
     // create a Qt user interface
     QApplication application(argc, argv);
@@ -71,12 +69,6 @@ int main(int argc, char * argv[])
     componentManager->Connect(componentControllerQtComponent->GetName(), "Controller",
                               componentMicronTracker->GetName(), "Controller");
 
-    // add data collection for mtsMicronTracker state table
-    mtsCollectorState * componentCollector =
-        new mtsCollectorState(componentMicronTracker->GetName(),
-                              componentMicronTracker->GetDefaultStateTableName(),
-                              mtsCollectorBase::COLLECTOR_FILE_FORMAT_CSV);
-
     // add interfaces for tools and populate controller widget with tool widgets
     for (unsigned int i = 0; i < componentMicronTracker->GetNumberOfTools(); i++) {
         std::string toolName = componentMicronTracker->GetToolName(i);
@@ -89,12 +81,7 @@ int main(int argc, char * argv[])
         componentManager->Connect(toolName, toolName,
                                   componentMicronTracker->GetName(), toolName);
 
-        componentCollector->AddSignal(toolName + "Position");
     }
-    componentManager->AddComponent(componentCollector);
-    componentCollector->Connect();
-    componentManager->Connect(componentControllerQtComponent->GetName(), "DataCollector",
-                              componentCollector->GetName(), "Control");
 
     // create and start all components
     componentManager->CreateAllAndWait(5.0 * cmn_s);

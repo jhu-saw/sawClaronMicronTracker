@@ -83,7 +83,7 @@ void mtsMicronTrackerToolQtComponent::RecordQSlot(void)
 {
     QString path = QDir::currentPath() + "/CollectedPoints.csv";
     std::ofstream file;
-    file.open(path.toAscii(), std::ios::app);
+    file.open(path.toStdString().c_str(), std::ios::app);
     file << MTC.PositionCartesian.Timestamp() << ", "
          << MTC.PositionCartesian.Position().Translation().X() << ", "
          << MTC.PositionCartesian.Position().Translation().Y() << ", "

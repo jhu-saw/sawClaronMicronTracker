@@ -45,34 +45,19 @@ mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(con
 
     mtsInterfaceRequired * required = AddInterfaceRequired("Controller");
     if (required) {
-        required->AddFunction("CalibratePivot", MTC.CalibratePivot);
         required->AddFunction("ToggleCapturing", MTC.Capture);
         required->AddFunction("ToggleTracking", MTC.Track);
         required->AddFunction("GetCameraFrameLeft", MTC.GetFrameLeft);
-        required->AddFunction("GetCameraFrameRight", MTC.GetFrameRight);
-        required->AddFunction("ComputeCameraModel", MTC.ComputeCameraModel);
+        required->AddFunction("GetCameraFrameRight", MTC.GetFrameRight);        
         required->AddFunction("GetXPointsMaxNum", MTC.GetXPointsMaxNum);
         required->AddFunction("GetXPoints", MTC.GetXPoints);
         required->AddFunction("GetXPointsProjectionLeft", MTC.GetXPointsProjectionLeft);
         required->AddFunction("GetXPointsProjectionRight", MTC.GetXPointsProjectionRight);
     }
 
-    required = AddInterfaceRequired("DataCollector");
-    if (required) {
-        required->AddFunction("StartCollection", Collector.Start);
-        required->AddFunction("StopCollection", Collector.Stop);
-    }
-    
-
-    // connect Qt signals to slots
-    QObject::connect(ControllerWidget->ButtonCalibratePivot, SIGNAL(clicked()),
-                     this, SLOT(MTCCalibratePivotQSlot()));
-    QObject::connect(ControllerWidget->ButtonComputeCameraModel, SIGNAL(clicked()),
-                     this, SLOT(MTCComputeCameraModelQSlot()));
+    // connect Qt signals to slots    
     QObject::connect(ControllerWidget->ButtonTrack, SIGNAL(toggled(bool)),
-                     this, SLOT(MTCTrackQSlot(bool)));
-    QObject::connect(ControllerWidget->ButtonRecord, SIGNAL(toggled(bool)),
-                     this, SLOT(RecordQSlot(bool)));
+                     this, SLOT(MTCTrackQSlot(bool)));    
     QObject::connect(ControllerWidget->ButtonScreenshot, SIGNAL(clicked()),
                      this, SLOT(ScreenshotQSlot()));
     QObject::connect(this->Timer, SIGNAL(timeout()),
@@ -82,8 +67,7 @@ mtsMicronTrackerControllerQtComponent::mtsMicronTrackerControllerQtComponent(con
 
 void mtsMicronTrackerControllerQtComponent::AddTool(QObject * toolQtComponent, QWidget * toolQtWidget, QPoint * markerLeft, QPoint * markerRight)
 {
-    ControllerWidget->LayoutTools->addWidget(toolQtWidget);
-    ControllerWidget->BoxTools->addItem(toolQtWidget->windowTitle());
+    ControllerWidget->LayoutTools->addWidget(toolQtWidget);    
 
     MarkerNames.append(toolQtWidget->windowTitle());
     MarkersLeft.append(markerLeft);
@@ -182,19 +166,6 @@ void mtsMicronTrackerControllerQtComponent::PaintImageWithXpoints(QImage & frame
     }
 }
 
-void mtsMicronTrackerControllerQtComponent::MTCCalibratePivotQSlot(void)
-{
-    mtsStdString toolName = ControllerWidget->BoxTools->currentText().toStdString();
-    MTC.CalibratePivot(mtsStdString(toolName));
-}
-
-
-void mtsMicronTrackerControllerQtComponent::MTCComputeCameraModelQSlot(void)
-{
-    MTC.ComputeCameraModel(mtsStdString("MicronTrackerLeftRectification.dat"));
-}
-
-
 void mtsMicronTrackerControllerQtComponent::MTCTrackQSlot(bool toggled)
 {
     MTC.Capture(mtsBool(toggled));
@@ -207,24 +178,16 @@ void mtsMicronTrackerControllerQtComponent::MTCTrackQSlot(bool toggled)
 }
 
 
-void mtsMicronTrackerControllerQtComponent::RecordQSlot(bool toggled)
-{
-    if (toggled) {
-        Collector.Start();
-    } else {
-        Collector.Stop();
-    }
-}
-
-
 void mtsMicronTrackerControllerQtComponent::ScreenshotQSlot(void)
 {
-    QPixmap leftCamera = QPixmap::grabWidget(ControllerWidget->FrameLeft);
-    QPixmap rightCamera = QPixmap::grabWidget(ControllerWidget->FrameRight);
+    QPixmap leftCamera(ControllerWidget->FrameLeft->size());
+    QPixmap rightCamera(ControllerWidget->FrameRight->size());
+    leftCamera = CentralWidget.grab(ControllerWidget->FrameLeft->geometry());
+    rightCamera = CentralWidget.grab(ControllerWidget->FrameRight->geometry());
 
     std::string dateTime;
     osaGetDateTimeString(dateTime);
-
+    std::cerr << QDir::currentPath().toStdString() << std::endl;	
     QString leftPath = QDir::currentPath() + "/LeftCamera-" + dateTime.c_str() + ".tif";
     if (!leftPath.isEmpty()) {
         leftCamera.save(leftPath, "tif");

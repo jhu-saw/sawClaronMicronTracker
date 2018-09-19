@@ -22,10 +22,6 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstVector/vctDynamicVectorTypes.h>
 #include <cisstOSAbstraction/osaSleep.h>
 #include <cisstMultiTask/mtsInterfaceProvided.h>
-#include <cisstStereoVision/svlConverters.h>
-#if CISST_HAS_CISSTNETLIB
-    #include <cisstNumerical/nmrLSqLin.h>
-#endif
 #include <sawClaronMicronTracker/mtsMicronTracker.h>
 
 CMN_IMPLEMENT_SERVICES_DERIVED_ONEARG(mtsMicronTracker, mtsTaskPeriodic, mtsTaskPeriodicConstructorArg);
@@ -53,8 +49,7 @@ void mtsMicronTracker::Construct(void)
     ImageTable->AddData(ImageRight, "ImageRight");
 
     mtsInterfaceProvided * provided = AddInterfaceProvided("Controller");
-    if (provided) {
-        provided->AddCommandWrite(&mtsMicronTracker::CalibratePivot, this, "CalibratePivot");
+    if (provided) {        
         provided->AddCommandWrite(&mtsMicronTracker::ToggleCapturing, this, "ToggleCapturing");
         provided->AddCommandWrite(&mtsMicronTracker::ToggleTracking, this, "ToggleTracking");
         provided->AddCommandReadState(StateTable, IsCapturing, "IsCapturing");
@@ -106,6 +101,8 @@ void mtsMicronTracker::Configure(const std::string & filename)
     XPoints.resize(XPointsMaxNum);
     XPointsProjectionLeft.resize(XPointsMaxNum);
     XPointsProjectionRight.resize(XPointsMaxNum);
+
+    StartCameras();
 }
 
 void mtsMicronTracker::SetJitterFilterEnabled(const mtsBool & flag)
@@ -203,21 +200,21 @@ std::string mtsMicronTracker::GetToolName(const unsigned int index) const
 }
 
 
-void mtsMicronTracker::Startup(void)
+void mtsMicronTracker::StartCameras(void)
 {
     // attach cameras
     MTC( Cameras_AttachAvailableCameras(const_cast<char *>(CameraCalibrationDir.c_str())) );
     if (Cameras_Count() < 1) {
-        CMN_LOG_CLASS_INIT_ERROR << "Startup: no camera found" << std::endl;
+        CMN_LOG_CLASS_INIT_ERROR << "StartCameras: no camera found" << std::endl;
     }
-    CMN_LOG_CLASS_INIT_VERBOSE << "Startup: found " << Cameras_Count() << " camera(s)" << std::endl;
+    CMN_LOG_CLASS_INIT_VERBOSE << "StartCameras: found " << Cameras_Count() << " camera(s)" << std::endl;
 
     // load marker templates
     MTC( Markers_LoadTemplates(const_cast<char *>(MarkerTemplatesDir.c_str())) );
     if (Markers_TemplatesCount() < 1) {
-        CMN_LOG_CLASS_INIT_ERROR << "Startup: no marker template found" << std::endl;
+        CMN_LOG_CLASS_INIT_ERROR << "StartCameras: no marker template found" << std::endl;
     }
-    CMN_LOG_CLASS_INIT_VERBOSE << "Startup: loaded " << Markers_TemplatesCount() << " marker template(s)" << std::endl;
+    CMN_LOG_CLASS_INIT_VERBOSE << "StartCameras: loaded " << Markers_TemplatesCount() << " marker template(s)" << std::endl;
 
     IdentifiedMarkers = Collection_New();
     PoseXf = Xform3D_New();
@@ -240,10 +237,6 @@ void mtsMicronTracker::Startup(void)
     // get camera resolution and initialize buffers
     MTC( Camera_ResolutionGet(CurrentCamera, &FrameWidth, &FrameHeight) );
     CMN_LOG_CLASS_INIT_VERBOSE << "Startup: resolution is " << FrameWidth << " x " << FrameHeight << std::endl;
-    RGB = new svlSampleImageRGB();
-    RGB->SetSize(FrameWidth, FrameHeight);
-    ImageBufferLeft = new svlBufferSample(*RGB);
-    ImageBufferRight = new svlBufferSample(*RGB);
 
     ImageLeft.SetSize(FrameWidth * FrameHeight);
     ImageRight.SetSize(FrameWidth * FrameHeight);
@@ -280,26 +273,22 @@ void mtsMicronTracker::Run(void)
         int numFramesGrabbed;
         MTC( Camera_FramesGrabbedGet(CurrentCamera, &numFramesGrabbed) );
         if (numFramesGrabbed > 0) {
+            ImageTable->Start();
             MTC( Camera_ImagesGet(CurrentCamera,
                                   ImageLeft.Pointer(),
                                   ImageRight.Pointer()) );
             ImageTable->Advance();
-
-            svlConverter::Gray8toRGB24(ImageLeft.Pointer(), RGB->GetUCharPointer(), FrameWidth * FrameHeight);
-            ImageBufferLeft->Push(RGB);
-            svlConverter::Gray8toRGB24(ImageRight.Pointer(), RGB->GetUCharPointer(), FrameWidth * FrameHeight);
-            ImageBufferRight->Push(RGB);
         }
     }
     mtMeasurementHazardCode hazardCode = Camera_LastFrameThermalHazard(CurrentCamera);
     if (hazardCode == mtCameraWarmingUp)
-        std::cout << "Camera is not yet thermally stable." << std::endl;
-    else if (hazardCode != mtCameraWarmingUp)
-        std::cout << "Camera is thermally stable." << std::endl;
+        CMN_LOG_CLASS_RUN_WARNING << "Camera is not yet thermally stable." << std::endl;
+//    else if (hazardCode != mtCameraWarmingUp)
+//        std::cout << "Camera is thermally stable." << std::endl;
 
     if (IsTracking) {
         Track();
-        TrackXPoint();
+        // TrackXPoint();
     }
 }
 
@@ -310,9 +299,6 @@ void mtsMicronTracker::Cleanup(void)
     MTC( Xform3D_Free(PoseXf) );
     MTC( Persistence_Free(Path) );
     Cameras_Detach();
-
-    delete ImageBufferLeft;
-    delete ImageBufferRight;
 }
 
 
@@ -446,6 +432,8 @@ void mtsMicronTracker::Track(void)
                                           &(tool->MarkerProjectionRight.Y())) );
 
         }
+
+#if 0
         // get the tracking data of template points
         mtHandle IdentifiedFacets = Collection_New();
         MTC( Marker_IdentifiedFacetsGet(markerHandle, CurrentCamera, false, IdentifiedFacets) );
@@ -494,7 +482,7 @@ void mtsMicronTracker::Track(void)
             CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [" << j << "]:  " << tool->MarkerTemplatePositions[3 * j] << ",   " << tool->MarkerTemplatePositions[3 * j + 1] << ",   " << tool->MarkerTemplatePositions[3 * j + 2] << std::endl;
         }
         CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplatePositions[3 * 2] << ",   " << tool->MarkerTemplatePositions[3 * 2 + 1] << ",   " << tool->MarkerTemplatePositions[3 * 2 + 2] << std::endl;
-
+#endif
 /*        for ( unsigned int j = 0; j < 2; j++) {
             for ( unsigned int k = 0; k < 3; k++) {
                 tool->MarkerTemplateTrackingPositions[j].at(k) = endPt[3 * j + k];
@@ -606,7 +594,7 @@ void mtsMicronTracker::TrackXPoint(void)
 
             for (unsigned int r = 0; r < 4; r++)
                 CMN_LOG_CLASS_RUN_DEBUG << "template positions " << "[" << r << "]:   " << templatePos[3 * r] << ",   " << templatePos[3 * r + 1] << ",   " << templatePos[3 * r + 2] << std::endl;
-         }
+        }
     }
 
     mtHandle IdentifiedXPoints = Collection_New();
@@ -618,7 +606,7 @@ void mtsMicronTracker::TrackXPoint(void)
 
     for (int i = 0; i < Collection_Count(IdentifiedXPoints); i++) {
 
-    // check if tool exists, generate a name and add it otherwise
+        // check if tool exists, generate a name and add it otherwise
         mtHandle XPointHandle = Collection_Int(IdentifiedXPoints, i+1);
 
         MTC ( XPoint_3DPositionGet(XPointHandle, &XPoints[3 * numIdentifiedMarkers + i].X(), &XPoints[3 * numIdentifiedMarkers + i].Y(), &XPoints[3 * numIdentifiedMarkers + i].Z()) );
@@ -626,88 +614,16 @@ void mtsMicronTracker::TrackXPoint(void)
         CMN_LOG_CLASS_RUN_DEBUG << " XPoint" << 3 * numIdentifiedMarkers + i  << ": " << XPoints[3 * numIdentifiedMarkers + i].X()  << ", " << XPoints[3 * numIdentifiedMarkers + i].Y() << ", " << XPoints[3 * numIdentifiedMarkers + i].Z() << std::endl;
 
         MTC( Camera_ProjectionOnImage(CurrentCamera, LEFT_CAMERA, XPoints[3 * numIdentifiedMarkers + i].Pointer(),
-                                        &(XPointsProjectionLeft[3 * numIdentifiedMarkers + i].X()),
-                                        &(XPointsProjectionLeft[3 * numIdentifiedMarkers + i].Y()) ) );
+                                      &(XPointsProjectionLeft[3 * numIdentifiedMarkers + i].X()),
+                                      &(XPointsProjectionLeft[3 * numIdentifiedMarkers + i].Y()) ) );
         MTC( Camera_ProjectionOnImage(CurrentCamera, RIGHT_CAMERA, XPoints[3 * numIdentifiedMarkers + i].Pointer(),
-                                        &(XPointsProjectionRight[3 * numIdentifiedMarkers + i].X()),
-                                        &(XPointsProjectionRight[3 * numIdentifiedMarkers + i].Y()) ) );
+                                      &(XPointsProjectionRight[3 * numIdentifiedMarkers + i].X()),
+                                      &(XPointsProjectionRight[3 * numIdentifiedMarkers + i].Y()) ) );
         CMN_LOG_CLASS_RUN_DEBUG << "XPoint[" << 3 * numIdentifiedMarkers + i << "] left: " << XPointsProjectionLeft[3 * numIdentifiedMarkers + i].X() << ",   " << XPointsProjectionLeft[3 * numIdentifiedMarkers + i].Y() << std::endl;
         CMN_LOG_CLASS_RUN_DEBUG << "XPoint[" << 3 * numIdentifiedMarkers + i << "] right: " << XPointsProjectionRight[3 * numIdentifiedMarkers + i].X() << ",   " << XPointsProjectionRight[3 * numIdentifiedMarkers + i].Y() << std::endl;
     }
     Collection_Free(IdentifiedXPoints);
 }
-
-
-void mtsMicronTracker::CalibratePivot(const std::string & toolName)
-{
-    Tool * tool = Tools.GetItem(toolName);
-    CMN_LOG_CLASS_RUN_WARNING << "CalibratePivot: calibrating " << tool->Name << std::endl;
-
-#if CISST_HAS_CISSTNETLIB
-    const unsigned int numPoints = 250;
-
-    tool->TooltipOffset.SetAll(0.0);
-
-    CMN_LOG_CLASS_RUN_WARNING << "CalibratePivot: starting sampling in 5 seconds" << std::endl;
-    osaSleep(5.0 * cmn_s);
-    CMN_LOG_CLASS_RUN_WARNING << "CalibratePivot: sampling started" << std::endl;
-
-    vctMat A(3 * numPoints, 6, VCT_COL_MAJOR);
-    vctVec b(3 * numPoints);
-    std::vector<vctFrm3> frames(numPoints);
-
-    vctDynamicMatrixRef<double> matrixRef;
-    vctDynamicVectorRef<double> vectorRef;
-
-    for (unsigned int i = 0; i < numPoints; i++) {
-        MTC( Cameras_GrabFrame(CurrentCamera) );
-        Track();
-        frames[i] = tool->MarkerPosition.Position();
-
-        matrixRef.SetRef(3, 3, 1, 3*numPoints, A.Pointer(3*i, 0));
-        matrixRef.Assign(tool->MarkerPosition.Position().Rotation());
-
-        matrixRef.SetRef(3, 3, 1, 3*numPoints, A.Pointer(3*i, 3));
-        matrixRef.Assign(-vctMat::Eye(3));
-
-        vectorRef.SetRef(3, b.Pointer(i*3));
-        vectorRef.Assign(tool->MarkerPosition.Position().Translation());
-
-        osaSleep(50.0 * cmn_ms);  // to prevent frame grab timeout
-    }
-
-    CMN_LOG_CLASS_RUN_WARNING << "CalibratePivot: sampling completed" << std::endl;
-
-    vctVec x(b.size());
-    vct3 tooltip;
-    vct3 pivot;
-    nmrLSqLin(A, b, x);
-    for (unsigned int i = 0; i < 3; i++) {
-        tooltip[i] = -x[i];
-        pivot[i] = -x[i+3];
-    }
-    tool->TooltipOffset = tooltip;
-
-    vct3 error;
-    double errorSquareSum = 0.0;
-    for (unsigned int i = 0; i < numPoints; i++) {
-        error = (frames[i] * tooltip) - pivot;
-        CMN_LOG_CLASS_RUN_ERROR << "CalibratePivot: error " << i << ": " << error << std::endl;
-        errorSquareSum += error.NormSquare();
-    }
-    double errorRMS = sqrt(errorSquareSum / numPoints);
-
-    CMN_LOG_CLASS_RUN_WARNING << "CalibratePivot:\n"
-                              << " * tooltip offset:\n" << tooltip << "\n"
-                              << " * pivot position:\n" << pivot << "\n"
-                              << " * error RMS: " << errorRMS << std::endl;
-    CMN_LOG_CLASS_RUN_WARNING << "CalibratePivot: done" << std::endl;
-
-#else
-    CMN_LOG_CLASS_RUN_WARNING << "CalibratePivot: requires cisstNetlib" << std::endl;
-#endif
-}
-
 
 void mtsMicronTracker::ComputeCameraModel(const std::string & pathRectificationLUT)
 {

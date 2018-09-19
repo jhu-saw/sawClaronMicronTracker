@@ -47,8 +47,9 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsTransformationTypes.h>
 #include <cisstOSAbstraction/osaGetTime.h>
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
-#include <cisstStereoVision/svlBufferSample.h>
 #include <sawClaronMicronTracker/sawClaronMicronTrackerExport.h>  // always include last
+
+#define _LINUX64
 
 #include <MTC.h>
 
@@ -57,10 +58,10 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
 {
     CMN_DECLARE_SERVICES(CMN_DYNAMIC_CREATION_ONEARG, CMN_LOG_ALLOW_DEFAULT);
 
- protected:
+protected:
     class Tool
     {
-     public:
+    public:
         Tool(void);
         ~Tool(void) {};
 
@@ -81,7 +82,7 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
         vct3 TooltipOffset;
     };
 
- public:
+public:
     mtsMicronTracker(const std::string & taskName, const double period) :
         mtsTaskPeriodic(taskName, period, false, 5000) { Construct(); }
     mtsMicronTracker(const mtsTaskPeriodicConstructorArg & arg) :
@@ -90,7 +91,7 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
 
     void Construct(void);
     void Configure(const std::string & filename = "");
-    void Startup(void);
+    void StartCameras(void);
     void Run(void);
     void Cleanup(void);
 
@@ -98,14 +99,8 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
         return Tools.size();
     }
     std::string GetToolName(const unsigned int index) const;
-    svlBufferSample * GetImageBufferLeft(void) {
-        return ImageBufferLeft;
-    }
-    svlBufferSample * GetImageBufferRight(void) {
-        return ImageBufferRight;
-    }
 
- protected:
+protected:
     enum { LEFT_CAMERA, RIGHT_CAMERA, MIDDLE_CAMERA };
 
     Tool * CheckTool(const std::string & serialNumber);
@@ -120,7 +115,6 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     void ToggleTracking(const bool & toggle);
     void Track(void);
     void TrackXPoint(void);
-    void CalibratePivot(const std::string & toolName);
     void ComputeCameraModel(const std::string & pathRectificationLUT);
     void SetJitterFilterEnabled(const mtsBool & flag);
     void SetJitterCoefficient(const double & coefficient);
@@ -154,9 +148,6 @@ class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
     mtsStateTable * ImageTable;
     mtsUCharVec ImageLeft;
     mtsUCharVec ImageRight;
-    svlSampleImageRGB * RGB;
-    svlBufferSample * ImageBufferLeft;
-    svlBufferSample * ImageBufferRight;
 };
 
 CMN_DECLARE_SERVICES_INSTANTIATION(mtsMicronTracker);

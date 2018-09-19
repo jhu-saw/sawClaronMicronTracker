@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>308</width>
+    <width>330</width>
     <height>305</height>
    </rect>
   </property>
@@ -14,73 +14,23 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="4" rowspan="8">
-    <widget class="QLabel" name="FrameRight">
-     <property name="frameShape">
-      <enum>QFrame::Box</enum>
+   <item row="6" column="2">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
      </property>
-     <property name="frameShadow">
-      <enum>QFrame::Sunken</enum>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
      </property>
-    </widget>
-   </item>
-   <item row="1" column="1" colspan="3">
-    <widget class="QGroupBox" name="BoxCalibration">
-     <property name="title">
-      <string>Calibration</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QPushButton" name="ButtonCalibratePivot">
-        <property name="text">
-         <string>Calibrate</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="BoxTools"/>
-      </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="QPushButton" name="ButtonComputeCameraModel">
-        <property name="text">
-         <string>Compute Camera Model</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
+    </spacer>
    </item>
    <item row="2" column="2">
     <widget class="QPushButton" name="ButtonTrack">
      <property name="text">
       <string>Track</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="1" colspan="3">
-    <layout class="QVBoxLayout" name="LayoutTools">
-     <property name="sizeConstraint">
-      <enum>QLayout::SetFixedSize</enum>
-     </property>
-    </layout>
-   </item>
-   <item row="0" column="0" rowspan="8">
-    <widget class="QLabel" name="FrameLeft">
-     <property name="frameShape">
-      <enum>QFrame::Box</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Sunken</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QPushButton" name="ButtonCaptureFrameLeft">
-     <property name="text">
-      <string>&lt;</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -97,35 +47,57 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="2">
-    <widget class="QPushButton" name="ButtonRecord">
+   <item row="1" column="1" colspan="3">
+    <widget class="QGroupBox" name="BoxCalibration">
+     <property name="title">
+      <string>Calibration</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2"/>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QPushButton" name="ButtonCaptureFrameLeft">
      <property name="text">
-      <string>Record</string>
+      <string>&lt;</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="4" column="2">
+   <item row="0" column="0" rowspan="7">
+    <widget class="QLabel" name="FrameLeft">
+     <property name="frameShape">
+      <enum>QFrame::Box</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="2">
     <widget class="QPushButton" name="ButtonScreenshot">
      <property name="text">
       <string>Screenshot</string>
      </property>
     </widget>
    </item>
-   <item row="7" column="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="0" column="4" rowspan="7">
+    <widget class="QLabel" name="FrameRight">
+     <property name="frameShape">
+      <enum>QFrame::Box</enum>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
      </property>
-    </spacer>
+    </widget>
+   </item>
+   <item row="5" column="1" colspan="3">
+    <layout class="QVBoxLayout" name="LayoutTools">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetFixedSize</enum>
+     </property>
+    </layout>
    </item>
   </layout>
  </widget>

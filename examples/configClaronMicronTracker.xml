@@ -1,33 +1,25 @@
 <?xml version="1.0" encoding="utf-8" ?>
 
 <tracker>
-
   <!-- controller properties
     calibration: directory containing camera calibration file
     markers: directory containing marker definitions
   -->
-  <controller calibration="/Users/sungminkim/Project/Programming/Micron/MacOSX/CalibrationFiles/"
-              markers="/Users/sungminkim/Project/Programming/Micron/MacOSX/Markers" />
+  <controller calibration="/home/pchalas1/Downloads/MicronTracker3.7.2.3_Linux_Release/CalibrationFiles"
+              markers="/home/pchalas1/Downloads/MicronTracker3.7.2.3_Linux_Release/Markers"/>
 
   <!-- list of tools used -->
-  <tools>
-
-    <!-- tool properties
+  <!-- tool properties
       name: used to name the tool component interface
       marker: marker definition file, relative to "markers" directory
     -->
-    <tool name="Reference"
-          marker="test1" />
-          
-    <tool name="Tool"
-          marker="test2" />
-          
+  <tools>
+    <tool name="TT" marker="TTblock" />
+    <tool name="A" marker="a" />        
   </tools>
   
-  <xpoints>
-      
-    <xpoint max_number="6" />
-      
+  <xpoints>      
+    <xpoint max_number="4" />      
   </xpoints>
       
 </tracker>

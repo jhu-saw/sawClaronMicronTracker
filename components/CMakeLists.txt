@@ -46,22 +46,19 @@ if (cisst_FOUND_AS_REQUIRED)
   endif ()
 
   # MicronTracker library
-  if (WIN32)    
-    # Windows
-    find_path (ClaronMicronTracker_INCLUDE_DIR
-               NAMES MTC.h
-               PATHS "C:/Program Files/Claron Technology/MicronTracker/Dist64"
-                     "C:/Program Files/Claron Technology/MicronTracker/Dist"
-                     "C:/Program Files (x86)/Claron Technology/MicronTracker/Dist")
-    find_library (ClaronMicronTracker_MTC_LIBRARY
-                  NAMES MTC
-                  HINTS ${ClaronMicronTracker_INCLUDE_DIR})
-    set (ClaronMicronTracker_LIBRARIES
-         ${ClaronMicronTracker_MTC_LIBRARY})
-    # Linux
-  elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    find_path (ClaronMicronTracker_INCLUDE_DIR
-               NAMES MTC.h)
+  find_path (ClaronMicronTracker_INCLUDE_DIR
+             NAMES MTC.h
+             PATHS "C:/Program Files/Claron Technology/MicronTracker/Dist64"
+                   "C:/Program Files/Claron Technology/MicronTracker/Dist"
+                   "C:/Program Files (x86)/Claron Technology/MicronTracker/Dist")
+  find_library (ClaronMicronTracker_MTC_LIBRARY
+                NAMES MTC
+                HINTS ${ClaronMicronTracker_INCLUDE_DIR})
+  set (ClaronMicronTracker_LIBRARIES
+       ${ClaronMicronTracker_MTC_LIBRARY})
+
+  # Linux
+  if (UNIX)
     find_library (ClaronMicronTracker_dc1394_LIBRARY
                   NAMES dc1394
                   HINTS ${ClaronMicronTracker_INCLUDE_DIR})
@@ -93,15 +90,15 @@ if (cisst_FOUND_AS_REQUIRED)
   set (sawClaronMicronTracker_LIBRARIES sawClaronMicronTracker "${ClaronMicronTracker_LIBRARIES}")
   set (sawClaronMicronTrackerQt_LIBRARIES sawClaronMicronTrackerQt)
 
-   # Set the version number
-    set (sawClaronMicronTracker_VERSION_MAJOR "1")
-    set (sawClaronMicronTracker_VERSION_MINOR "0")
-    set (sawClaronMicronTracker_VERSION_PATCH "0")
-    set (sawClaronMicronTracker_VERSION "${sawClaronMicronTracker_VERSION_MAJOR}.${sawClaronMicronTracker_VERSION_MINOR}.${sawClaronMicronTracker_VERSION_PATCH}")
+  # Set the version number
+  set (sawClaronMicronTracker_VERSION_MAJOR "1")
+  set (sawClaronMicronTracker_VERSION_MINOR "0")
+  set (sawClaronMicronTracker_VERSION_PATCH "0")
+  set (sawClaronMicronTracker_VERSION "${sawClaronMicronTracker_VERSION_MAJOR}.${sawClaronMicronTracker_VERSION_MINOR}.${sawClaronMicronTracker_VERSION_PATCH}")
 
-    # Generate sawClaronMicronTrackerRevision.h
-    configure_file ("${sawClaronMicronTracker_SOURCE_DIR}/code/sawClaronMicronTrackerRevision.h.in"
-                    "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker/sawClaronMicronTrackerRevision.h")
+  # Generate sawClaronMicronTrackerRevision.h
+  configure_file ("${sawClaronMicronTracker_SOURCE_DIR}/code/sawClaronMicronTrackerRevision.h.in"
+                  "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker/sawClaronMicronTrackerRevision.h")
 
   include_directories (${sawClaronMicronTracker_INCLUDE_DIR} ${sawClaronMicronTracker_BINARY_DIR})
   set (sawClaronMicronTracker_HEADER_DIR "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker")
@@ -111,54 +108,10 @@ if (cisst_FOUND_AS_REQUIRED)
                code/mtsMicronTracker.cpp
                ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTracker.h)
   set_property (TARGET sawClaronMicronTracker PROPERTY FOLDER "sawClaronMicronTracker")
-  target_link_libraries (sawClaronMicronTracker ${ClaronMicronTracker_LIBRARIES})
+  if(WIN32)
+    target_link_libraries (sawClaronMicronTracker ${ClaronMicronTracker_LIBRARIES})
+  endif(WIN32)  
   cisst_target_link_libraries (sawClaronMicronTracker ${REQUIRED_CISST_LIBRARIES})
-
-  # # Qt widgets
-  # if (CISST_HAS_QT)
-
-  #   file (MAKE_DIRECTORY "${sawClaronMicronTracker_BINARY_DIR}/sawClaronMicronTracker")
-
-  #   # initial find_package doesn't have cisstQt
-  #   cisst_set_directories (cisstQt)
-
-  #   # for Qt generated header files
-  #   include_directories (${CMAKE_CURRENT_BINARY_DIR})
-  #   qt4_wrap_cpp (SAW_MICRON_TRACKER_QT_COMPONENTS_GENERATED
-  #                 ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerControllerQtComponent.h
-  #                 ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerToolQtComponent.h)
-  #   qt4_wrap_ui (SAW_MICRON_TRACKER_QT_WIDGETS_GENERATED
-  #                mtsMicronTrackerControllerQtWidget.ui
-  #                mtsMicronTrackerToolQtWidget.ui)
-
-  #   add_library (sawClaronMicronTrackerQt
-  #                ${SAW_MICRON_TRACKER_QT_COMPONENTS_GENERATED}
-  #                ${SAW_MICRON_TRACKER_QT_WIDGETS_GENERATED}
-  #                ${sawClaronMicronTracker_HEADER_DIR}/sawClaronMicronTrackerExportQt.h
-  #                mtsMicronTrackerControllerQtComponent.cpp
-  #                ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerControllerQtComponent.h
-  #                mtsMicronTrackerToolQtComponent.cpp
-  #                ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerToolQtComponent.h)
-  #   set_property (TARGET sawClaronMicronTrackerQt PROPERTY FOLDER "sawClaronMicronTracker")
-
-  #   # find all the header files generated by qt4_wrap_ui and copy to include dir
-  #   foreach (headerFile ${SAW_MICRON_TRACKER_QT_WIDGETS_GENERATED})
-  #     # get the filename only
-  #     get_filename_component (fileName "${headerFile}" NAME)
-  #     # recent versions of CMake add a prefix ui_, strip it!
-  #     string (REGEX REPLACE "^ui_" ""
-  #             fileNameWoUI ${fileName})
-  #     add_custom_command (TARGET sawClaronMicronTrackerQt
-  #                         POST_BUILD
-  #                         COMMAND ${CMAKE_COMMAND}
-  #                         ARGS -E copy_if_different
-  #                                 ${headerFile}
-  #                                 ${sawClaronMicronTracker_BINARY_DIR}/sawClaronMicronTracker/${fileNameWoUI})
-  #   endforeach (headerFile ${SAW_MICRON_TRACKER_QT_WIDGETS_GENERATED})
-
-  #   target_link_libraries (sawClaronMicronTrackerQt ${QT_LIBRARIES})
-  #   cisst_target_link_libraries (sawClaronMicronTrackerQt ${REQUIRED_CISST_LIBRARIES} cisstQt)
-  # endif (CISST_HAS_QT)
 
   # add Qt code
   if (CISST_HAS_QT)
@@ -171,17 +124,22 @@ if (cisst_FOUND_AS_REQUIRED)
 
   configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/cmake/sawClaronMicronTrackerConfig.cmake.in"
                   "${sawClaronMicronTracker_CMAKE_CONFIG_FILE}"
-                   @ONLY@)
+                   @ONLY)
 
   cisst_add_config_version ("${sawClaronMicronTracker_CONFIG_FILE_DIR}/sawClaronMicronTrackerConfigVersion.cmake"
                             VERSION ${sawClaronMicronTracker_VERSION}
                             DESTINATION ${CISST_CMAKE_INSTALL_SUFFIX}/saw
                             COMPONENT sawClaronMicronTracker)
+
+  configure_file ("${sawClaronMicronTracker_SOURCE_DIR}/code/sawClaronMicronTrackerConfig.h.in"
+                  "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker/sawClaronMicronTrackerConfig.h")
+
   # Install target for headers and library
   install (DIRECTORY
            "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker"
            "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker"
-           DESTINATION include)
+           DESTINATION include
+           PATTERN .svn EXCLUDE)
 
   install (TARGETS sawClaronMicronTracker
            RUNTIME DESTINATION bin

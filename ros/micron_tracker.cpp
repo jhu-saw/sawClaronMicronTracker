@@ -2,10 +2,11 @@
 /* ex: set filetype=cpp softtabstop=4 shiftwidth=4 tabstop=4 cindent expandtab: */
 
 /*
-  Author(s):  Anton Deguet
-  Created on: 2014-07-21
 
-  (C) Copyright 2014-2016 Johns Hopkins University (JHU), All Rights Reserved.
+  Author(s):  Ali Uneri
+  Created on: 2009-11-06
+
+  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -16,13 +17,22 @@ http://www.cisst.org/cisst/license.txt.
 --- end cisst license ---
 */
 
+/*!
+  \file
+  \brief An example interface for Claron Micron Tracker.
+  \ingroup devicesTutorial
+*/
+
 #include <cisstCommon/cmnPath.h>
 #include <cisstCommon/cmnUnits.h>
 #include <cisstCommon/cmnCommandLineOptions.h>
+#include <cisstOSAbstraction/osaThreadedLogFile.h>
+#include <cisstOSAbstraction/osaSleep.h>
+#include <cisstMultiTask/mtsCollectorState.h>
 #include <cisstMultiTask/mtsTaskManager.h>
-#include <sawAtracsysFusionTrack/mtsAtracsysFusionTrack.h>
-#include <sawAtracsysFusionTrack/mtsAtracsysFusionTrackToolQtWidget.h>
-#include <sawAtracsysFusionTrack/mtsAtracsysFusionTrackStrayMarkersQtWidget.h>
+#include <sawClaronMicronTracker/mtsMicronTracker.h>
+#include <sawClaronMicronTracker/mtsMicronTrackerControllerQtComponent.h>
+#include <sawClaronMicronTracker/mtsMicronTrackerToolQtComponent.h>
 
 #include <ros/ros.h>
 #include <cisst_ros_bridge/mtsROSBridge.h>
@@ -37,17 +47,16 @@ int main(int argc, char * argv[])
     cmnLogger::SetMask(CMN_LOG_ALLOW_ALL);
     cmnLogger::SetMaskFunction(CMN_LOG_ALLOW_ALL);
     cmnLogger::SetMaskDefaultLog(CMN_LOG_ALLOW_ALL);
-    cmnLogger::SetMaskClassMatching("mtsAtracsysFusionTrack", CMN_LOG_ALLOW_ALL);
-    cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS_AND_WARNINGS);
+    cmnLogger::SetMaskClassMatching("mtsMicronTracker", CMN_LOG_ALLOW_ALL);
+    cmnLogger::AddChannel(std::cerr, CMN_LOG_ALLOW_ERRORS);
 
-    // parse options
     cmnCommandLineOptions options;
-    std::string jsonConfigFile = "";
+    std::string xmlConfigFile = "";
     double rosPeriod = 10.0 * cmn_ms;
 
-    options.AddOptionOneValue("j", "json-config",
-                              "json configuration file",
-                              cmnCommandLineOptions::OPTIONAL_OPTION, &jsonConfigFile);
+    options.AddOptionOneValue("x", "xml-config",
+                              "xml configuration file",
+                              cmnCommandLineOptions::REQUIRED_OPTION, &xmlConfigFile);
     options.AddOptionOneValue("p", "ros-period",
                               "period in seconds to read all tool positions (default 0.01, 10 ms, 100Hz).  There is no point to have a period higher than the tracker component",
                               cmnCommandLineOptions::OPTIONAL_OPTION, &rosPeriod);
@@ -63,58 +72,55 @@ int main(int argc, char * argv[])
     options.PrintParsedArguments(arguments);
     std::cout << "Options provided:" << std::endl << arguments << std::endl;
 
+    // create a Qt user interface
+    QApplication application(argc, argv);
+
     // create the components
-    mtsAtracsysFusionTrack * tracker = new mtsAtracsysFusionTrack("FusionTrack");
-    tracker->Configure(jsonConfigFile);
+    mtsMicronTracker * tracker = new mtsMicronTracker("componentMicronTracker", 50.0 * cmn_ms);
+    mtsMicronTrackerControllerQtComponent * trackerWidget = new mtsMicronTrackerControllerQtComponent("componentControllerQtComponent");
+
+    // configure the components
+    cmnPath searchPath;
+    searchPath.Add(cmnPath::GetWorkingDirectory());
+    std::string configPath = searchPath.Find(xmlConfigFile);
+    if (configPath.empty()) {
+        std::cerr << "Failed to find configuration: " << configPath << std::endl;
+        return 1;
+    }
+    tracker->Configure(configPath);
 
     // add the components to the component manager
     mtsManagerLocal * componentManager = mtsComponentManager::GetInstance();
     componentManager->AddComponent(tracker);
+    componentManager->AddComponent(trackerWidget);
 
-    // ROS bridge
-    mtsROSBridge * rosBridge = new mtsROSBridge("AtracsysBridge", rosPeriod, true);
-
-    // create a Qt user interface
-    QApplication application(argc, argv);
-
-    // organize all widgets in a tab widget
-    QTabWidget * tabWidget = new QTabWidget;
-
-    // stray markers
-    mtsAtracsysFusionTrackStrayMarkersQtWidget * strayMarkersWidget;
-    strayMarkersWidget = new mtsAtracsysFusionTrackStrayMarkersQtWidget("StrayMarkers-GUI");
-    strayMarkersWidget->Configure();
-    componentManager->AddComponent(strayMarkersWidget);
-    componentManager->Connect(strayMarkersWidget->GetName(), "Controller",
+    // connect the components, e.g. RequiredInterface -> ProvidedInterface
+    componentManager->Connect(trackerWidget->GetName(), "Controller",
                               tracker->GetName(), "Controller");
-    tabWidget->addTab(strayMarkersWidget, "Stray Markers");
 
-    // tools
+    // Create ROS Bridge
+    mtsROSBridge * rosBridge = new mtsROSBridge("MicronTrackerBridge", rosPeriod, true);
     std::string toolName;
-    mtsAtracsysFusionTrackToolQtWidget * toolWidget;
 
-    // configure all components
+    // add interfaces for tools and populate controller widget with tool widgets
     for (size_t tool = 0; tool < tracker->GetNumberOfTools(); tool++) {
         toolName = tracker->GetToolName(tool);
-        // ROS publisher
+        mtsMicronTrackerToolQtComponent * toolWidget = new mtsMicronTrackerToolQtComponent(toolName);
+        trackerWidget->AddTool(toolWidget,
+                               toolWidget->GetWidget(),
+                               toolWidget->GetMarkerProjectionLeft(),
+                               toolWidget->GetMarkerProjectionRight());
+
+        componentManager->AddComponent(toolWidget);
+        componentManager->Connect(toolName, toolName,
+                                  tracker->GetName(), toolName);
+
         std::string topicName = toolName;
         std::replace(topicName.begin(), topicName.end(), '-', '_');
         rosBridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
-            (toolName, "GetPositionCartesian",
-             "/atracsys/" + topicName);
-        // Qt Widget
-        toolWidget = new mtsAtracsysFusionTrackToolQtWidget(toolName + "-GUI");
-        toolWidget->Configure();
-        componentManager->AddComponent(toolWidget);
-        componentManager->Connect(toolWidget->GetName(), "Tool",
-                                  tracker->GetName(), toolName);
-        tabWidget->addTab(toolWidget, toolName.c_str());
+                (toolName, "GetPositionCartesian",
+                 "/micron/" + topicName);
     }
-
-    // add ROS bridge for stray markers
-    rosBridge->AddPublisherFromCommandRead<std::vector<vct3>, sensor_msgs::PointCloud>
-        ("Controller", "GetThreeDFiducialPosition",
-         "/atracsys/fiducials");
 
     // add the bridge after all interfaces have been created
     componentManager->AddComponent(rosBridge);
@@ -125,22 +131,25 @@ int main(int argc, char * argv[])
         componentManager->Connect(rosBridge->GetName(), toolName,
                                   tracker->GetName(), toolName);
     }
-    componentManager->Connect(rosBridge->GetName(), "Controller",
-                              tracker->GetName(), "Controller");
 
     // create and start all components
     componentManager->CreateAllAndWait(5.0 * cmn_s);
     componentManager->StartAllAndWait(5.0 * cmn_s);
 
+
+    // create a main window to hold QWidgets
+    QMainWindow * mainWindow = new QMainWindow();
+    mainWindow->setCentralWidget(trackerWidget->GetWidget());
+    mainWindow->setWindowTitle("MicronTracker Controller");
+    mainWindow->resize(0,0);
+    mainWindow->show();
+
     // run Qt user interface
-    tabWidget->show();
     application.exec();
 
     // kill all components and perform cleanup
     componentManager->KillAllAndWait(5.0 * cmn_s);
     componentManager->Cleanup();
-
-    cmnLogger::Kill();
 
     return 0;
 }

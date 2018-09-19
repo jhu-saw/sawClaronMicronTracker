@@ -31,7 +31,7 @@ if (cisst_FOUND)
   include (${CISST_USE_FILE})
 
   # sawClaronMicronTracker has been compiled within cisst, we should find it automatically
-  cisst_find_saw_component (sawClaronMicronTracker REQUIRED)
+  find_package(sawClaronMicronTracker REQUIRED)
 
   if (sawClaronMicronTracker_FOUND)
 
@@ -45,22 +45,10 @@ if (cisst_FOUND)
     # link against non cisst libraries and cisst components
     target_link_libraries (sawClaronMicronTrackerQtExample
                            ${sawClaronMicronTracker_LIBRARIES}
-                           ${sawClaronMicronTrackerQt_LIBRARIES}
-                           ${QT_LIBRARIES}
                          )
 
     # link against cisst libraries (and dependencies)
     cisst_target_link_libraries (sawClaronMicronTrackerQtExample ${REQUIRED_CISST_LIBRARIES})
-
-    add_custom_command (TARGET sawClaronMicronTrackerQtExample
-                        POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} ARGS -E copy
-                                ${CMAKE_CURRENT_SOURCE_DIR}/configClaronMicronTracker.xml
-                                ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/configClaronMicronTracker.xml
-                        COMMAND ${CMAKE_COMMAND} ARGS -E copy
-                                ${CMAKE_CURRENT_SOURCE_DIR}/mainPython.py
-                                ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/mainPython.py
-                        COMMENT "sawClaronMicronTrackerQtExample: copying files to the executable directory")
 
   endif (sawClaronMicronTracker_FOUND)
 
