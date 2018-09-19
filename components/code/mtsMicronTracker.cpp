@@ -27,7 +27,12 @@ http://www.cisst.org/cisst/license.txt.
 CMN_IMPLEMENT_SERVICES_DERIVED_ONEARG(mtsMicronTracker, mtsTaskPeriodic, mtsTaskPeriodicConstructorArg);
 
 // macro to check for and report MTC usage errors
-#define MTC(func) { int retval = func; if (retval != mtOK) CMN_LOG_CLASS_RUN_ERROR << "MTC: " << MTLastErrorString() << std::endl;};
+#define MTC(func) {                                                              \
+    int retval = func;                                                           \
+    if (retval != mtOK) {                                                        \
+        CMN_LOG_CLASS_RUN_ERROR << "MTC: " << MTLastErrorString() << std::endl;  \
+    }                                                                            \
+};
 
 
 void mtsMicronTracker::Construct(void)
