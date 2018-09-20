@@ -2,11 +2,10 @@
 /* ex: set filetype=cpp softtabstop=4 shiftwidth=4 tabstop=4 cindent expandtab: */
 
 /*
-
   Author(s):  Ali Uneri
   Created on: 2009-11-06
 
-  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2018 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -54,7 +53,7 @@ void mtsMicronTracker::Construct(void)
     ImageTable->AddData(ImageRight, "ImageRight");
 
     mtsInterfaceProvided * provided = AddInterfaceProvided("Controller");
-    if (provided) {        
+    if (provided) {
         provided->AddCommandWrite(&mtsMicronTracker::ToggleCapturing, this, "ToggleCapturing");
         provided->AddCommandWrite(&mtsMicronTracker::ToggleTracking, this, "ToggleTracking");
         provided->AddCommandReadState(StateTable, IsCapturing, "IsCapturing");
@@ -113,9 +112,9 @@ void mtsMicronTracker::Configure(const std::string & filename)
 void mtsMicronTracker::SetJitterFilterEnabled(const mtsBool & flag)
 {
     Markers_JitterFilterEnabledSet(flag.GetData());
-    
+
     bool status_JitterFilter = Markers_JitterFilterEnabled();
-    
+
     if (status_JitterFilter == true)
         std::cout << "Jitter filter is enabled" << std::endl;
     else
@@ -131,7 +130,7 @@ void mtsMicronTracker::SetKalmanFilterEnabled(const mtsBool & flag)
 {
     Markers_KalmanFilterEnabledSet(flag.GetData());
     bool status_KalmanFilter = Markers_KalmanFilterEnabled();
-    
+
     if (status_KalmanFilter == true)
         std::cout << "Kalman filter is enabled" << std::endl;
     else
@@ -163,7 +162,8 @@ mtsMicronTracker::Tool * mtsMicronTracker::AddTool(const std::string & name, con
         tool = new Tool();
         tool->Name = name;
         tool->SerialNumber = serialNumber;
-
+        tool->TooltipPosition.SetMovingFrame(name);
+        tool->TooltipPosition.SetReferenceFrame("Micron");
         if (!Tools.AddItem(tool->Name, tool, CMN_LOG_LEVEL_INIT_ERROR)) {
             CMN_LOG_CLASS_INIT_ERROR << "AddTool: no tool created, duplicate name exists: " << name << std::endl;
             delete tool;
@@ -313,6 +313,7 @@ vctFrm3 mtsMicronTracker::XfHandleToFrame(mtHandle & xfHandle)
     MTC( Xform3D_RotMatGet(xfHandle, frame.Rotation().Pointer()) );
     frame.Rotation() = frame.Rotation().Transpose();  // MTC matrices are COL_MAJOR
     MTC( Xform3D_ShiftGet(xfHandle, frame.Translation().Pointer()) );
+    frame.Translation().Multiply(cmn_mm); // MTC reports positions in mm, convert to CISST units
     return frame;
 }
 
@@ -428,11 +429,13 @@ void mtsMicronTracker::Track(void)
 
             CMN_LOG_CLASS_RUN_DEBUG << "Track: " << markerName << " is at:\n" << tooltipPosition << std::endl;
 
-            MTC( Camera_ProjectionOnImage(CurrentCamera, LEFT_CAMERA, tooltipPosition.Translation().Pointer(),
+            vct3 tipPosition(tooltipPosition.Translation().Pointer());
+            tipPosition.Divide(cmn_mm); // convert back to mm to compute projectins
+            MTC( Camera_ProjectionOnImage(CurrentCamera, LEFT_CAMERA, tipPosition.Pointer(),
                                           &(tool->MarkerProjectionLeft.X()),
                                           &(tool->MarkerProjectionLeft.Y())) );
 
-            MTC( Camera_ProjectionOnImage(CurrentCamera, RIGHT_CAMERA, tooltipPosition.Translation().Pointer(),
+            MTC( Camera_ProjectionOnImage(CurrentCamera, RIGHT_CAMERA, tipPosition.Pointer(),
                                           &(tool->MarkerProjectionRight.X()),
                                           &(tool->MarkerProjectionRight.Y())) );
 
