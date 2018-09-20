@@ -52,7 +52,7 @@ if (cisst_FOUND)
                   CATKIN_DEPENDS cisst_ros_bridge geometry_msgs roscpp std_msgs)
 
   # sawClaronMicronTracker has been compiled within cisst, we should find it automatically
-  find_package (sawClaronMicronTracker 1.0.0 REQUIRED)
+  find_package (sawClaronMicronTracker 1.0.0)
 
   if (sawClaronMicronTracker_FOUND)
 
@@ -71,6 +71,8 @@ if (cisst_FOUND)
     # link against cisst libraries (and dependencies)
     cisst_target_link_libraries (micron_tracker ${REQUIRED_CISST_LIBRARIES})
 
+  else (sawClaronMicronTracker_FOUND)
+    message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawClaronMicronTracker")
   endif (sawClaronMicronTracker_FOUND)
 
 endif (cisst_FOUND)

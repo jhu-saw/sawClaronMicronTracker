@@ -1,7 +1,5 @@
 #
-#
-# (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights
-# Reserved.
+# (C) Copyright 2009-2018 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -31,7 +29,7 @@ if (cisst_FOUND)
   include (${CISST_USE_FILE})
 
   # sawClaronMicronTracker has been compiled within cisst, we should find it automatically
-  find_package(sawClaronMicronTracker REQUIRED)
+  find_package (sawClaronMicronTracker)
 
   if (sawClaronMicronTracker_FOUND)
 
@@ -50,6 +48,8 @@ if (cisst_FOUND)
     # link against cisst libraries (and dependencies)
     cisst_target_link_libraries (sawClaronMicronTrackerQtExample ${REQUIRED_CISST_LIBRARIES})
 
+  else (sawClaronMicronTracker_FOUND)
+    message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires sawClaronMicronTracker")
   endif (sawClaronMicronTracker_FOUND)
 
 endif (cisst_FOUND)

@@ -1,7 +1,5 @@
 #
-#
-# (C) Copyright 2011-2012 Johns Hopkins University (JHU), All Rights
-# Reserved.
+# (C) Copyright 2011-2018 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -24,7 +22,7 @@ set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstMultiTask
                               cisstParameterTypes)
 
-find_package (cisst 1.0.6 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.0.9 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND_AS_REQUIRED)
 
@@ -81,74 +79,80 @@ if (cisst_FOUND_AS_REQUIRED)
           ${v3p_netlib_LIBRARY})
   endif (UNIX)
 
-  # create/configure file for find_package (sawClaronMicronTracker)
-  set (sawClaronMicronTracker_INCLUDE_DIR 
-    "${sawClaronMicronTracker_SOURCE_DIR}/include" 
-    "${sawClaronMicronTracker_BINARY_DIR}" 
-    "${ClaronMicronTracker_INCLUDE_DIR}")
-  set (sawClaronMicronTracker_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
-  set (sawClaronMicronTracker_LIBRARIES sawClaronMicronTracker "${ClaronMicronTracker_LIBRARIES}")
-  set (sawClaronMicronTrackerQt_LIBRARIES sawClaronMicronTrackerQt)
+  if (ClaronMicronTracker_MTC_LIBRARY)
+    # create/configure file for find_package (sawClaronMicronTracker)
+    set (sawClaronMicronTracker_INCLUDE_DIR
+         "${sawClaronMicronTracker_SOURCE_DIR}/include"
+         "${sawClaronMicronTracker_BINARY_DIR}"
+         "${ClaronMicronTracker_INCLUDE_DIR}")
+    set (sawClaronMicronTracker_LIBRARY_DIR "${LIBRARY_OUTPUT_PATH}")
+    set (sawClaronMicronTracker_LIBRARIES sawClaronMicronTracker "${ClaronMicronTracker_LIBRARIES}")
+    set (sawClaronMicronTrackerQt_LIBRARIES sawClaronMicronTrackerQt)
 
-  # Set the version number
-  set (sawClaronMicronTracker_VERSION_MAJOR "1")
-  set (sawClaronMicronTracker_VERSION_MINOR "0")
-  set (sawClaronMicronTracker_VERSION_PATCH "0")
-  set (sawClaronMicronTracker_VERSION "${sawClaronMicronTracker_VERSION_MAJOR}.${sawClaronMicronTracker_VERSION_MINOR}.${sawClaronMicronTracker_VERSION_PATCH}")
+    # Set the version number
+    set (sawClaronMicronTracker_VERSION_MAJOR "1")
+    set (sawClaronMicronTracker_VERSION_MINOR "0")
+    set (sawClaronMicronTracker_VERSION_PATCH "0")
+    set (sawClaronMicronTracker_VERSION "${sawClaronMicronTracker_VERSION_MAJOR}.${sawClaronMicronTracker_VERSION_MINOR}.${sawClaronMicronTracker_VERSION_PATCH}")
 
-  # Generate sawClaronMicronTrackerRevision.h
-  configure_file ("${sawClaronMicronTracker_SOURCE_DIR}/code/sawClaronMicronTrackerRevision.h.in"
-                  "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker/sawClaronMicronTrackerRevision.h")
+    # Generate sawClaronMicronTrackerRevision.h
+    configure_file ("${sawClaronMicronTracker_SOURCE_DIR}/code/sawClaronMicronTrackerRevision.h.in"
+                    "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker/sawClaronMicronTrackerRevision.h")
 
-  include_directories (${sawClaronMicronTracker_INCLUDE_DIR} ${sawClaronMicronTracker_BINARY_DIR})
-  set (sawClaronMicronTracker_HEADER_DIR "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker")
+    include_directories (${sawClaronMicronTracker_INCLUDE_DIR} ${sawClaronMicronTracker_BINARY_DIR})
+    set (sawClaronMicronTracker_HEADER_DIR "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker")
 
-  add_library (sawClaronMicronTracker
-               ${sawClaronMicronTracker_HEADER_DIR}/sawClaronMicronTrackerExport.h
-               code/mtsMicronTracker.cpp
-               ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTracker.h)
-  set_property (TARGET sawClaronMicronTracker PROPERTY FOLDER "sawClaronMicronTracker")
-  if(WIN32)
-    target_link_libraries (sawClaronMicronTracker ${ClaronMicronTracker_LIBRARIES})
-  endif(WIN32)  
-  cisst_target_link_libraries (sawClaronMicronTracker ${REQUIRED_CISST_LIBRARIES})
+    add_library (sawClaronMicronTracker
+                 ${sawClaronMicronTracker_HEADER_DIR}/sawClaronMicronTrackerExport.h
+                 code/mtsMicronTracker.cpp
+                 ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTracker.h)
+    set_property (TARGET sawClaronMicronTracker PROPERTY FOLDER "sawClaronMicronTracker")
 
-  # add Qt code
-  if (CISST_HAS_QT)
-    add_subdirectory (code/Qt)
-    set (sawClaronMicronTracker_LIBRARIES ${sawClaronMicronTracker_LIBRARIES} ${sawClaronMicronTrackerQt_LIBRARIES})
-  endif (CISST_HAS_QT)
+    # on Linux, linking against libMTC.a fails because if wasn't compiled with -fPIC
+    if (WIN32)
+      target_link_libraries (sawClaronMicronTracker ${ClaronMicronTracker_LIBRARIES})
+    endif(WIN32)
+    cisst_target_link_libraries (sawClaronMicronTracker ${REQUIRED_CISST_LIBRARIES})
 
-  set (sawClaronMicronTracker_CMAKE_CONFIG_FILE 
-    "${sawClaronMicronTracker_CONFIG_FILE_DIR}/sawClaronMicronTrackerConfig.cmake")  
+    # add Qt code
+    if (CISST_HAS_QT)
+      add_subdirectory (code/Qt)
+      set (sawClaronMicronTracker_LIBRARIES ${sawClaronMicronTracker_LIBRARIES} ${sawClaronMicronTrackerQt_LIBRARIES})
+    endif (CISST_HAS_QT)
 
-  configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/cmake/sawClaronMicronTrackerConfig.cmake.in"
-                  "${sawClaronMicronTracker_CMAKE_CONFIG_FILE}"
-                   @ONLY)
+    set (sawClaronMicronTracker_CMAKE_CONFIG_FILE
+         "${sawClaronMicronTracker_CONFIG_FILE_DIR}/sawClaronMicronTrackerConfig.cmake")
 
-  cisst_add_config_version ("${sawClaronMicronTracker_CONFIG_FILE_DIR}/sawClaronMicronTrackerConfigVersion.cmake"
-                            VERSION ${sawClaronMicronTracker_VERSION}
-                            DESTINATION ${CISST_CMAKE_INSTALL_SUFFIX}/saw
-                            COMPONENT sawClaronMicronTracker)
+    configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/cmake/sawClaronMicronTrackerConfig.cmake.in"
+                    "${sawClaronMicronTracker_CMAKE_CONFIG_FILE}"
+                     @ONLY)
 
-  configure_file ("${sawClaronMicronTracker_SOURCE_DIR}/code/sawClaronMicronTrackerConfig.h.in"
-                  "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker/sawClaronMicronTrackerConfig.h")
+    cisst_add_config_version ("${sawClaronMicronTracker_CONFIG_FILE_DIR}/sawClaronMicronTrackerConfigVersion.cmake"
+                              VERSION ${sawClaronMicronTracker_VERSION}
+                              DESTINATION ${CISST_CMAKE_INSTALL_SUFFIX}/saw
+                              COMPONENT sawClaronMicronTracker)
 
-  # Install target for headers and library
-  install (DIRECTORY
-           "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker"
-           "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker"
-           DESTINATION include
-           PATTERN .svn EXCLUDE)
+    configure_file ("${sawClaronMicronTracker_SOURCE_DIR}/code/sawClaronMicronTrackerConfig.h.in"
+                    "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker/sawClaronMicronTrackerConfig.h")
 
-  install (TARGETS sawClaronMicronTracker
-           RUNTIME DESTINATION bin
-           LIBRARY DESTINATION lib
-           ARCHIVE DESTINATION lib)
+    # Install target for headers and library
+    install (DIRECTORY
+             "${sawClaronMicronTracker_SOURCE_DIR}/include/sawClaronMicronTracker"
+             "${sawClaronMicronTracker_BINARY_DIR}/include/sawClaronMicronTracker"
+             DESTINATION include
+             PATTERN .svn EXCLUDE)
 
-  install (FILES "${sawClaronMicronTracker_CMAKE_CONFIG_FILE}"
-           DESTINATION "share/sawClaronMicronTracker")
+    install (TARGETS sawClaronMicronTracker
+             RUNTIME DESTINATION bin
+             LIBRARY DESTINATION lib
+             ARCHIVE DESTINATION lib)
 
+    install (FILES "${sawClaronMicronTracker_CMAKE_CONFIG_FILE}"
+             DESTINATION "share/sawClaronMicronTracker")
+
+  else (ClaronMicronTracker_MTC_LIBRARY)
+    message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires the MicronTracker SDK (lib MTC)")
+  endif  (ClaronMicronTracker_MTC_LIBRARY)
 else (cisst_FOUND_AS_REQUIRED)
   message ("Information: code in ${CMAKE_CURRENT_SOURCE_DIR} will not be compiled, it requires ${REQUIRED_CISST_LIBRARIES}")
 endif (cisst_FOUND_AS_REQUIRED)
