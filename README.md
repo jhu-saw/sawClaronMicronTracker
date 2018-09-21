@@ -17,15 +17,17 @@ The `ros` folder contains code for a ROS node that interfaces with the sawClaron
  * ROS (optional)
 
 # Notes
- * On Linux 64 bits OSs, make sure `_LINUX64` is defined before including `MTC.h`
+ * If you use PointGrey's utilities (flycap, tryclops) to test the cameras, make sure you unplug/replug the cameras before using the Micron Tracker examples or sawClaronMicronTracker.  It seems that the PointGrey's programs change the cameras configuration in a way that is not compatible with the Micron Tracker SDK.
+ * On Linux 64 bits OSs, make sure `_LINUX64` is defined before including `MTC.h` (this is done in CMakeLists.txt for sawClaronMicronTracker)
  * On Linux, if you're tempted to compile and run the examples provided with the SDK and don't want to use NetBeans, you can compile using the command lines:
    * Example `NetBeansProjects/MTSimpleDemoC`: `g++ -D_LINUX64SimpleDemoC.cpp -L. -lMTC -ldc1394 -lraw1394 -lpthread -lm -lvnl -lvnl_algo` (you will first have to copy the files MTC.h and libMTC.a in this folder)
    * Example `NetBeansProjects/MTDemoCPP`: `g++ -D_LINUX64 *.cpp -L. -lfltk -lMTC -ldc1394 -lraw1394 -lpthread -lm -lvnl -lvnl_algo -lGL -lfltk_gl` (you will first have to copy the files MTC.h and libMTC.a in this folder)
+   * For both examples, you can ignore the `lib*1394.a` provided along `libMTC.a`, the OS provided shared libraries work fine (at least on Ubuntu 16.04)
 
 
 # ROS/Catkin build tools
 
-This is by far the simplest solution to compile and run the examples on Linux.
+This is by far the simplest solution to compile and run the sawClaronMicronTracker examples on Linux.
 See how to build cisst with ROS/Catkin tools on the cisst wiki:
 https://github.com/jhu-cisst/cisst/wiki/Compiling-cisst-and-SAW-with-CMake (Make sure you go to the ROS build instructions).
 
