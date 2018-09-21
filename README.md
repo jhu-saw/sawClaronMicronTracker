@@ -31,7 +31,7 @@ This is by far the simplest solution to compile and run the sawClaronMicronTrack
 See how to build cisst with ROS/Catkin tools on the cisst wiki:
 https://github.com/jhu-cisst/cisst/wiki/Compiling-cisst-and-SAW-with-CMake (Make sure you go to the ROS build instructions).
 
-When compiling the sawClaronMicronTracker code, you will need to specify where to find the Micron Tracker SDK.  Do a first `catkin build`, this build will skip the sawClaronMicronTracker because the directory containing the SDK is not defined.   To define it, use `ccmake` in a shell/terminal that has all the ROS environment variables defined (DO NOT USE `cmake-gui`, for some reasons, it ignores the environment variables) on the build directory for the SAW Force Dimension component.  For example:
+When compiling the sawClaronMicronTracker code, you will need to specify where to find the Micron Tracker SDK.  Do a first `catkin build`, this build will skip the sawClaronMicronTracker because the directory containing the SDK is not defined.   To define it, use `ccmake` in a shell/terminal that has all the ROS environment variables defined (DO NOT USE `cmake-gui`, for some reasons, it ignores the environment variables) on the build directory for the SAW Micron Tracker component.  For example:
 ```sh
 adeguet1@lcsr-qla:~/catkin_ws$ ccmake build_release/saw_claron_micron_tracker
 ```
