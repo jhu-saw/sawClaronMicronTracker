@@ -2,11 +2,10 @@
 /* ex: set filetype=cpp softtabstop=4 shiftwidth=4 tabstop=4 cindent expandtab: */
 
 /*
-
   Author(s):  Ali Uneri
   Created on: 2009-11-06
 
-  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2018 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -49,10 +48,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstParameterTypes/prmPositionCartesianGet.h>
 #include <sawClaronMicronTracker/sawClaronMicronTrackerExport.h>  // always include last
 
-#define _LINUX64
-
-#include <MTC.h>
-
+// forward declaration for MTC data
+struct mtsMicronTrackerData;
 
 class CISST_EXPORT mtsMicronTracker : public mtsTaskPeriodic
 {
@@ -66,7 +63,6 @@ protected:
         ~Tool(void) {};
 
         std::string Name;
-        mtHandle Handle;
         std::string SerialNumber;
         mtsInterfaceProvided * Interface;
         prmPositionCartesianGet TooltipPosition;
@@ -101,13 +97,12 @@ public:
     std::string GetToolName(const unsigned int index) const;
 
 protected:
+    mtsMicronTrackerData * TrackerData;
+    
     enum { LEFT_CAMERA, RIGHT_CAMERA, MIDDLE_CAMERA };
 
     Tool * CheckTool(const std::string & serialNumber);
     Tool * AddTool(const std::string & name, const std::string & serialNumber);
-
-    vctFrm3 XfHandleToFrame(mtHandle & xfHandle);
-    mtHandle FrameToXfHandle(vctFrm3 & frame);
 
     void InitComponent(void);  // called from constructor
 
@@ -119,7 +114,6 @@ protected:
     void SetJitterFilterEnabled(const mtsBool & flag);
     void SetJitterCoefficient(const double & coefficient);
     void SetKalmanFilterEnabled(const mtsBool & flag);
-
 
     int FrameWidth;
     int FrameHeight;
@@ -138,11 +132,6 @@ protected:
     std::vector<vct3> XPointsProjectionLeft;
     std::vector<vct3> XPointsProjectionRight;
 
-    mtHandle CurrentCamera;
-    mtHandle IdentifyingCamera;
-    mtHandle IdentifiedMarkers;
-    mtHandle PoseXf;
-    mtHandle Path;
     mtsDoubleVec MarkerProjectionLeft;
 
     mtsStateTable * ImageTable;

@@ -68,15 +68,15 @@ if (cisst_FOUND_AS_REQUIRED)
                   NAMES vnl_algo)
     find_library (vcl_LIBRARY
                   NAMES vcl)
-    find_library (v3p_netlib_LIBRARY
-                  NAMES v3p_netlib)
     list (APPEND ClaronMicronTracker_LIBRARIES
           ${ClaronMicronTracker_dc1394_LIBRARY}
           ${raw1394_LIBRARY}
           ${vnl_LIBRARY}
           ${vnl_algo_LIBRARY}
-          ${vcl_LIBRARY}
-          ${v3p_netlib_LIBRARY})
+          ${vcl_LIBRARY})
+    if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+      add_definitions (-D_LINUX64)
+    endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
   endif (UNIX)
 
   if (ClaronMicronTracker_MTC_LIBRARY)

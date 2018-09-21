@@ -23,19 +23,61 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsInterfaceProvided.h>
 #include <sawClaronMicronTracker/mtsMicronTracker.h>
 
+#include <MTC.h>
+
 CMN_IMPLEMENT_SERVICES_DERIVED_ONEARG(mtsMicronTracker, mtsTaskPeriodic, mtsTaskPeriodicConstructorArg);
 
-// macro to check for and report MTC usage errors
-#define MTC(func) {                                                              \
-    int retval = func;                                                           \
-    if (retval != mtOK) {                                                        \
-        CMN_LOG_CLASS_RUN_ERROR << "MTC: " << MTLastErrorString() << std::endl;  \
-    }                                                                            \
+// macro to check for and report MTC usage errors in class::method
+#define MTC(func) {                                                     \
+        int retval = func;                                              \
+        if (retval != mtOK) {                                           \
+            CMN_LOG_CLASS_RUN_ERROR << "MTC: " << MTLastErrorString() << std::endl; \
+        }                                                               \
+    };
+
+// same but used in global functions
+#define MTC_func(func) {                                                \
+        int retval = func;                                              \
+        if (retval != mtOK) {                                           \
+            CMN_LOG_RUN_ERROR << "MTC: " << MTLastErrorString() << std::endl; \
+        }                                                               \
+    };
+
+struct mtsMicronTrackerData {
+    mtHandle CurrentCamera;
+    mtHandle IdentifyingCamera;
+    mtHandle IdentifiedMarkers;
+    mtHandle PoseXf;
+    mtHandle Path;
 };
+
+
+vctFrm3 XfHandleToFrame(mtHandle & xfHandle)
+{
+    vctFrm3 frame;
+    MTC_func(Xform3D_RotMatGet(xfHandle, frame.Rotation().Pointer()));
+    frame.Rotation() = frame.Rotation().Transpose();  // MTC matrices are COL_MAJOR
+    MTC_func(Xform3D_ShiftGet(xfHandle, frame.Translation().Pointer()));
+    frame.Translation().Multiply(cmn_mm); // MTC reports positions in mm, convert to CISST units
+    return frame;
+}
+
+
+mtHandle FrameToXfHandle(const mtHandle & poseXf, vctFrm3 & frame)
+{
+    frame.Rotation() = frame.Rotation().Transpose();  // MTC matrices are COL_MAJOR
+    MTC_func(Xform3D_RotMatSet(poseXf, frame.Rotation().Pointer()));
+    vct3 translation = frame.Translation();
+    translation.Divide(cmn_mm); // convert back to mm
+    MTC_func(Xform3D_ShiftSet(poseXf, translation.Pointer()));
+    return poseXf;
+}
 
 
 void mtsMicronTracker::Construct(void)
 {
+    TrackerData = new mtsMicronTrackerData;
+
     IsCapturing = false;
     IsTracking = false;
 
@@ -208,28 +250,30 @@ std::string mtsMicronTracker::GetToolName(const unsigned int index) const
 void mtsMicronTracker::StartCameras(void)
 {
     // attach cameras
-    MTC( Cameras_AttachAvailableCameras(const_cast<char *>(CameraCalibrationDir.c_str())) );
+    MTC(Cameras_AttachAvailableCameras(const_cast<char *>(CameraCalibrationDir.c_str())));
     if (Cameras_Count() < 1) {
         CMN_LOG_CLASS_INIT_ERROR << "StartCameras: no camera found" << std::endl;
     }
-    CMN_LOG_CLASS_INIT_VERBOSE << "StartCameras: found " << Cameras_Count() << " camera(s)" << std::endl;
+    CMN_LOG_CLASS_INIT_VERBOSE << "StartCameras: found " << Cameras_Count()
+                               << " camera(s)" << std::endl;
 
     // load marker templates
-    MTC( Markers_LoadTemplates(const_cast<char *>(MarkerTemplatesDir.c_str())) );
+    MTC(Markers_LoadTemplates(const_cast<char *>(MarkerTemplatesDir.c_str())));
     if (Markers_TemplatesCount() < 1) {
         CMN_LOG_CLASS_INIT_ERROR << "StartCameras: no marker template found" << std::endl;
     }
-    CMN_LOG_CLASS_INIT_VERBOSE << "StartCameras: loaded " << Markers_TemplatesCount() << " marker template(s)" << std::endl;
+    CMN_LOG_CLASS_INIT_VERBOSE << "StartCameras: loaded " << Markers_TemplatesCount()
+                               << " marker template(s)" << std::endl;
 
-    IdentifiedMarkers = Collection_New();
-    PoseXf = Xform3D_New();
-    Path = Persistence_New();
+    TrackerData->IdentifiedMarkers = Collection_New();
+    TrackerData->PoseXf = Xform3D_New();
+    TrackerData->Path = Persistence_New();
 
     // select current camera
-    MTC( Cameras_ItemGet(0, &CurrentCamera) );
+    MTC(Cameras_ItemGet(0, &(TrackerData->CurrentCamera)));
 
     // check if a camera is connected
-    int retval = Cameras_GrabFrame(CurrentCamera);
+    int retval = Cameras_GrabFrame(TrackerData->CurrentCamera);
     if (retval != mtOK) {
         if (retval == mtGrabFrameError) {
             CMN_LOG_CLASS_INIT_ERROR << "Startup: camera is not connected" << std::endl;
@@ -240,8 +284,9 @@ void mtsMicronTracker::StartCameras(void)
     }
 
     // get camera resolution and initialize buffers
-    MTC( Camera_ResolutionGet(CurrentCamera, &FrameWidth, &FrameHeight) );
-    CMN_LOG_CLASS_INIT_VERBOSE << "Startup: resolution is " << FrameWidth << " x " << FrameHeight << std::endl;
+    MTC(Camera_ResolutionGet(TrackerData->CurrentCamera, &FrameWidth, &FrameHeight));
+    CMN_LOG_CLASS_INIT_VERBOSE << "Startup: resolution is " << FrameWidth
+                               << " x " << FrameHeight << std::endl;
 
     ImageLeft.SetSize(FrameWidth * FrameHeight);
     ImageRight.SetSize(FrameWidth * FrameHeight);
@@ -249,16 +294,17 @@ void mtsMicronTracker::StartCameras(void)
     // get calibration info
     char lines[80][80];
     int numLines;
-    MTC( Camera_CalibrationInfo(CurrentCamera, lines, 80, &numLines) );
+    MTC(Camera_CalibrationInfo(TrackerData->CurrentCamera, lines, 80, &numLines));
     std::stringstream calibrationInfo;
     for (int i = 0; i < numLines; i++) {
         calibrationInfo << " * " << lines[i] << "\n";
     }
-    CMN_LOG_CLASS_INIT_DEBUG << "Startup: calibration parameters:\n" << calibrationInfo.str() << std::endl;
+    CMN_LOG_CLASS_INIT_DEBUG << "Startup: calibration parameters:\n"
+                             << calibrationInfo.str() << std::endl;
 
     //Camera_HdrEnabledSet(CurrentCamera, true);
-    Camera_HistogramEqualizeImagesSet(CurrentCamera, true);
-    Camera_LightCoolnessSet(CurrentCamera, 0.56);  // obtain this value using CoolCard
+    Camera_HistogramEqualizeImagesSet(TrackerData->CurrentCamera, true);
+    Camera_LightCoolnessSet(TrackerData->CurrentCamera, 0.56);  // obtain this value using CoolCard
 }
 
 
@@ -266,7 +312,7 @@ void mtsMicronTracker::Run(void)
 {
     ProcessQueuedCommands();
 
-    int retval = Cameras_GrabFrame(CurrentCamera);
+    int retval = Cameras_GrabFrame(TrackerData->CurrentCamera);
     if (retval != mtOK) {
         if (retval == mtGrabFrameError) {
             CMN_LOG_CLASS_RUN_ERROR << "Run: camera is not connected" << std::endl;
@@ -276,20 +322,23 @@ void mtsMicronTracker::Run(void)
 
     if (IsCapturing) {
         int numFramesGrabbed;
-        MTC( Camera_FramesGrabbedGet(CurrentCamera, &numFramesGrabbed) );
+        MTC(Camera_FramesGrabbedGet(TrackerData->CurrentCamera,
+                                    &numFramesGrabbed));
         if (numFramesGrabbed > 0) {
             ImageTable->Start();
-            MTC( Camera_ImagesGet(CurrentCamera,
-                                  ImageLeft.Pointer(),
-                                  ImageRight.Pointer()) );
+            MTC(Camera_ImagesGet(TrackerData->CurrentCamera,
+                                 ImageLeft.Pointer(),
+                                 ImageRight.Pointer()));
             ImageTable->Advance();
         }
     }
-    mtMeasurementHazardCode hazardCode = Camera_LastFrameThermalHazard(CurrentCamera);
-    if (hazardCode == mtCameraWarmingUp)
+    mtMeasurementHazardCode hazardCode =
+        Camera_LastFrameThermalHazard(TrackerData->CurrentCamera);
+    if (hazardCode == mtCameraWarmingUp) {
         CMN_LOG_CLASS_RUN_WARNING << "Camera is not yet thermally stable." << std::endl;
-//    else if (hazardCode != mtCameraWarmingUp)
-//        std::cout << "Camera is thermally stable." << std::endl;
+    }
+    //    else if (hazardCode != mtCameraWarmingUp)
+    //        std::cout << "Camera is thermally stable." << std::endl;
 
     if (IsTracking) {
         Track();
@@ -300,30 +349,10 @@ void mtsMicronTracker::Run(void)
 
 void mtsMicronTracker::Cleanup(void)
 {
-    MTC( Collection_Free(IdentifiedMarkers) );
-    MTC( Xform3D_Free(PoseXf) );
-    MTC( Persistence_Free(Path) );
+    MTC(Collection_Free(TrackerData->IdentifiedMarkers));
+    MTC(Xform3D_Free(TrackerData->PoseXf));
+    MTC(Persistence_Free(TrackerData->Path));
     Cameras_Detach();
-}
-
-
-vctFrm3 mtsMicronTracker::XfHandleToFrame(mtHandle & xfHandle)
-{
-    vctFrm3 frame;
-    MTC( Xform3D_RotMatGet(xfHandle, frame.Rotation().Pointer()) );
-    frame.Rotation() = frame.Rotation().Transpose();  // MTC matrices are COL_MAJOR
-    MTC( Xform3D_ShiftGet(xfHandle, frame.Translation().Pointer()) );
-    frame.Translation().Multiply(cmn_mm); // MTC reports positions in mm, convert to CISST units
-    return frame;
-}
-
-
-mtHandle mtsMicronTracker::FrameToXfHandle(vctFrm3 & frame)
-{
-    frame.Rotation() = frame.Rotation().Transpose();  // MTC matrices are COL_MAJOR
-    MTC( Xform3D_RotMatSet(PoseXf, frame.Rotation().Pointer()) );
-    MTC( Xform3D_ShiftSet(PoseXf, frame.Translation().Pointer()) );
-    return PoseXf;
 }
 
 
@@ -367,14 +396,17 @@ void mtsMicronTracker::Track(void)
         toolIterator->second->TooltipPosition.SetValid(false);
     }
 
-    MTC( Markers_ProcessFrame(CurrentCamera) );
-    MTC( Markers_IdentifiedMarkersGet(CurrentCamera, IdentifiedMarkers) );
-    const unsigned int numIdentifiedMarkers = Collection_Count(IdentifiedMarkers);
-    CMN_LOG_CLASS_RUN_DEBUG << "Track: identified " << numIdentifiedMarkers << " marker(s)" << std::endl;
+    MTC(Markers_ProcessFrame(TrackerData->CurrentCamera));
+    MTC(Markers_IdentifiedMarkersGet(TrackerData->CurrentCamera,
+                                     TrackerData->IdentifiedMarkers));
+    const unsigned int numIdentifiedMarkers =
+        Collection_Count(TrackerData->IdentifiedMarkers);
+    CMN_LOG_CLASS_RUN_DEBUG << "Track: identified " << numIdentifiedMarkers
+                            << " marker(s)" << std::endl;
 
     for (unsigned int i = 1; i <= numIdentifiedMarkers; i++) {
-        markerHandle = Collection_Int(IdentifiedMarkers, i);
-        MTC( Marker_NameGet(markerHandle, markerName, MT_MAX_STRING_LENGTH, 0) );
+        markerHandle = Collection_Int(TrackerData->IdentifiedMarkers, i);
+        MTC(Marker_NameGet(markerHandle, markerName, MT_MAX_STRING_LENGTH, 0));
 
         // check if tool exists, generate a name and add it otherwise
         tool = CheckTool(markerName);
@@ -383,83 +415,90 @@ void mtsMicronTracker::Track(void)
             tool = AddTool(name, markerName);
         }
 
-        MTC( Marker_Marker2CameraXfGet(markerHandle, CurrentCamera, PoseXf, &IdentifyingCamera) );
-        if (IdentifyingCamera != 0) {
+        MTC(Marker_Marker2CameraXfGet(markerHandle,
+                                      TrackerData->CurrentCamera,
+                                      TrackerData->PoseXf,
+                                      &(TrackerData->IdentifyingCamera)));
+        if (TrackerData->IdentifyingCamera != 0) {
             if (tool->Name == "tool-COOLCARD") {
                 mtHandle identifiedFacets = Collection_New();
-                MTC( Marker_IdentifiedFacetsGet(markerHandle, CurrentCamera, false, identifiedFacets) );
+                MTC(Marker_IdentifiedFacetsGet(markerHandle,
+                                               TrackerData->CurrentCamera,
+                                               false, identifiedFacets));
                 mtHandle longVectorHandle = Vector_New();
                 mtHandle shortVectorHandle = Vector_New();
-                MTC( Facet_IdentifiedVectorsGet(Collection_Int(identifiedFacets, 1), longVectorHandle, shortVectorHandle) );
+                MTC(Facet_IdentifiedVectorsGet(Collection_Int(identifiedFacets, 1), longVectorHandle, shortVectorHandle));
                 if (longVectorHandle != 0) {
-                    MTC( Camera_LightCoolnessAdjustFromColorVector(CurrentCamera, longVectorHandle, 0) );
+                    MTC(Camera_LightCoolnessAdjustFromColorVector(TrackerData->CurrentCamera, longVectorHandle, 0));
                     CMN_LOG_CLASS_RUN_VERBOSE << "Track: light coolness set to " << Cameras_LightCoolness() << std::endl;
                 }
-                MTC( Collection_Free(identifiedFacets) );
-                MTC( Vector_Free(longVectorHandle) );
-                MTC( Vector_Free(shortVectorHandle) );
+                MTC(Collection_Free(identifiedFacets));
+                MTC(Vector_Free(longVectorHandle));
+                MTC(Vector_Free(shortVectorHandle));
                 continue;
             }
 
-            markerPosition = XfHandleToFrame(PoseXf);
+            markerPosition = XfHandleToFrame(TrackerData->PoseXf);
             tool->MarkerPosition.Position() = markerPosition;
 
             // get the calibration from marker template
-            MTC( Marker_Tooltip2MarkerXfGet(markerHandle, PoseXf) );
-            tooltipCalibration = XfHandleToFrame(PoseXf);
+            MTC(Marker_Tooltip2MarkerXfGet(markerHandle, TrackerData->PoseXf));
+            tooltipCalibration = XfHandleToFrame(TrackerData->PoseXf);
 
-//            // update the calibration in marker template
-//            if (tool->TooltipOffset.All()) {
-//                tooltipCalibration.Translation() = tool->TooltipOffset;
-//                PoseXf = FrameToXfHandle(tooltipCalibration);
-//                MTC( Marker_Tooltip2MarkerXfSet(markerHandle, PoseXf) );
-//                std::string markerPath = "C:\\Program Files\\Claron Technology\\MicronTracker\\Markers\\" + tool->SerialNumber + "_custom";
-//                MTC( Persistence_PathSet(Path, markerPath.c_str()) );
-//                MTC( Marker_StoreTemplate(markerHandle, Path, "") );
-//                tool->TooltipOffset.SetAll(0.0);
-//            }
+            //            // update the calibration in marker template
+            //            if (tool->TooltipOffset.All()) {
+            //                tooltipCalibration.Translation() = tool->TooltipOffset;
+            //                PoseXf = FrameToXfHandle(tooltipCalibration);
+            //                MTC(Marker_Tooltip2MarkerXfSet(markerHandle, PoseXf));
+            //                std::string markerPath = "C:\\Program Files\\Claron Technology\\MicronTracker\\Markers\\" + tool->SerialNumber + "_custom";
+            //                MTC(Persistence_PathSet(Path, markerPath.c_str()));
+            //                MTC(Marker_StoreTemplate(markerHandle, Path, ""));
+            //                tool->TooltipOffset.SetAll(0.0);
+            //            }
 
             tooltipPosition = markerPosition * tooltipCalibration;
-//            if (tool->Name == "Probe" && Tools.size() == 2) {
-//                tool->TooltipPosition.Position() = Tools.GetItem("Reference")->TooltipPosition.Position().ApplyInverseTo(tooltipPosition);
-//            } else {
-                tool->TooltipPosition.Position() = tooltipPosition;
-//            }
+            //            if (tool->Name == "Probe" && Tools.size() == 2) {
+            //                tool->TooltipPosition.Position() = Tools.GetItem("Reference")->TooltipPosition.Position().ApplyInverseTo(tooltipPosition);
+            //            } else {
+            tool->TooltipPosition.Position() = tooltipPosition;
+            //            }
             tool->TooltipPosition.SetValid(true);
 
             CMN_LOG_CLASS_RUN_DEBUG << "Track: " << markerName << " is at:\n" << tooltipPosition << std::endl;
 
             vct3 tipPosition(tooltipPosition.Translation().Pointer());
             tipPosition.Divide(cmn_mm); // convert back to mm to compute projectins
-            MTC( Camera_ProjectionOnImage(CurrentCamera, LEFT_CAMERA, tipPosition.Pointer(),
-                                          &(tool->MarkerProjectionLeft.X()),
-                                          &(tool->MarkerProjectionLeft.Y())) );
-
-            MTC( Camera_ProjectionOnImage(CurrentCamera, RIGHT_CAMERA, tipPosition.Pointer(),
-                                          &(tool->MarkerProjectionRight.X()),
-                                          &(tool->MarkerProjectionRight.Y())) );
+            MTC(Camera_ProjectionOnImage(TrackerData->CurrentCamera,
+                                         LEFT_CAMERA, tipPosition.Pointer(),
+                                         &(tool->MarkerProjectionLeft.X()),
+                                         &(tool->MarkerProjectionLeft.Y())));
+            
+            MTC(Camera_ProjectionOnImage(TrackerData->CurrentCamera,
+                                         RIGHT_CAMERA, tipPosition.Pointer(),
+                                         &(tool->MarkerProjectionRight.X()),
+                                         &(tool->MarkerProjectionRight.Y())));
 
         }
 
 #if 0
         // get the tracking data of template points
         mtHandle IdentifiedFacets = Collection_New();
-        MTC( Marker_IdentifiedFacetsGet(markerHandle, CurrentCamera, false, IdentifiedFacets) );
+        MTC(Marker_IdentifiedFacetsGet(markerHandle, CurrentCamera, false, IdentifiedFacets));
 
         mtHandle lvHandle = Vector_New();
         mtHandle svHandle = Vector_New();
-        MTC( Facet_IdentifiedVectorsGet(Collection_Int(IdentifiedFacets, 1), lvHandle, svHandle) );
+        MTC(Facet_IdentifiedVectorsGet(Collection_Int(IdentifiedFacets, 1), lvHandle, svHandle));
 
         double endPt[6];
         double endPt1[6];
-        MTC( Vector_EndPosGet(lvHandle, endPt) );
-        MTC( Vector_EndPosGet(svHandle, endPt1) );
+        MTC(Vector_EndPosGet(lvHandle, endPt));
+        MTC(Vector_EndPosGet(svHandle, endPt1));
 
-        for ( unsigned int j = 0; j < 2; j++) {
-            for ( unsigned int k = 0; k < 3; k++) {
+        for (unsigned int j = 0; j < 2; j++) {
+            for (unsigned int k = 0; k < 3; k++) {
                 tool->MarkerTemplateTrackingPositions[3 * j + k] = endPt[3 * j + k];
 
-                if ( ( (endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2]) ) && ( (endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2]) ) ) {
+                if (((endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2])) && ((endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2])) ) {
 
                     tool->MarkerTemplateTrackingPositions[3 * 2 + k] = endPt1[3 * j + k];
                 }
@@ -470,18 +509,18 @@ void mtsMicronTracker::Track(void)
 
         // To get Template data from the markers
         mtHandle TemplateFacets = Collection_New();
-        MTC( Marker_TemplateFacetsGet(markerHandle, &TemplateFacets) );
+        MTC(Marker_TemplateFacetsGet(markerHandle, &TemplateFacets));
 
         mtHandle facetHandle = Collection_Int(TemplateFacets, 1);
 
         double templatePos[12];
-        MTC( Facet_TemplatePositionsGet(facetHandle, templatePos) );
+        MTC(Facet_TemplatePositionsGet(facetHandle, templatePos));
 
-        for ( unsigned int j = 0; j < 2; j++) {
-            for ( unsigned int k = 0; k < 3; k++) {
+        for (unsigned int j = 0; j < 2; j++) {
+            for (unsigned int k = 0; k < 3; k++) {
                 tool->MarkerTemplatePositions[3 * j + k] = endPt[3 * j + k];
 
-                if ( ( (endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2]) ) && ( (endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2]) ) ) {
+                if (((endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2])) && ((endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2])) ) {
 
                     tool->MarkerTemplatePositions[3 * 2 + k] = endPt1[3 * j + k];
 
@@ -491,43 +530,43 @@ void mtsMicronTracker::Track(void)
         }
         CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplatePositions[3 * 2] << ",   " << tool->MarkerTemplatePositions[3 * 2 + 1] << ",   " << tool->MarkerTemplatePositions[3 * 2 + 2] << std::endl;
 #endif
-/*        for ( unsigned int j = 0; j < 2; j++) {
-            for ( unsigned int k = 0; k < 3; k++) {
-                tool->MarkerTemplateTrackingPositions[j].at(k) = endPt[3 * j + k];
+        /*        for (unsigned int j = 0; j < 2; j++) {
+                  for (unsigned int k = 0; k < 3; k++) {
+                  tool->MarkerTemplateTrackingPositions[j].at(k) = endPt[3 * j + k];
 
-                if ( ( (endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2]) ) && ( (endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2]) ) ) {
+                  if (((endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2])) && ((endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2])) ) {
 
-                    tool->MarkerTemplateTrackingPositions[2].at(k) = endPt1[3 * j + k];
-                }
-            }
-        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [" << j << "]:  " << tool->MarkerTemplateTrackingPositions[j].X() << ",   " << tool->MarkerTemplateTrackingPositions[j].Y() << ",   " << tool->MarkerTemplateTrackingPositions[j].Z()<< std::endl;
-        }
-        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplateTrackingPositions[2].X() << ",   " << tool->MarkerTemplatePositions[2].Y() << ",   " << tool->MarkerTemplatePositions[2].Z()<< std::endl;
+                  tool->MarkerTemplateTrackingPositions[2].at(k) = endPt1[3 * j + k];
+                  }
+                  }
+                  CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [" << j << "]:  " << tool->MarkerTemplateTrackingPositions[j].X() << ",   " << tool->MarkerTemplateTrackingPositions[j].Y() << ",   " << tool->MarkerTemplateTrackingPositions[j].Z()<< std::endl;
+                  }
+                  CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplateTrackingPositions[2].X() << ",   " << tool->MarkerTemplatePositions[2].Y() << ",   " << tool->MarkerTemplatePositions[2].Z()<< std::endl;
 
 
-        // To get Template data from the markers
-        mtHandle TemplateFacets = Collection_New();
-        MTC( Marker_TemplateFacetsGet(markerHandle, &TemplateFacets) );
+                  // To get Template data from the markers
+                  mtHandle TemplateFacets = Collection_New();
+                  MTC(Marker_TemplateFacetsGet(markerHandle, &TemplateFacets));
 
-        mtHandle facetHandle = Collection_Int(TemplateFacets, 1);
+                  mtHandle facetHandle = Collection_Int(TemplateFacets, 1);
 
-        double * templatePos = new double[12];
-        MTC( Facet_TemplatePositionsGet(facetHandle, templatePos) );
+                  double * templatePos = new double[12];
+                  MTC(Facet_TemplatePositionsGet(facetHandle, templatePos));
 
-        for ( unsigned int j = 0; j < 2; j++) {
-            for ( unsigned int k = 0; k < 3; k++) {
-                tool->MarkerTemplatePositions[j].at(k) = endPt[3 * j + k];
+                  for (unsigned int j = 0; j < 2; j++) {
+                  for (unsigned int k = 0; k < 3; k++) {
+                  tool->MarkerTemplatePositions[j].at(k) = endPt[3 * j + k];
 
-                if ( ( (endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2]) ) && ( (endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2]) ) ) {
+                  if (((endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2])) && ((endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2])) ) {
 
-                    tool->MarkerTemplatePositions[2].at(k) = endPt1[3 * j + k];
+                  tool->MarkerTemplatePositions[2].at(k) = endPt1[3 * j + k];
 
-                }
-            }
-        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [" << j << "]:  " << tool->MarkerTemplatePositions[j].X() << ",   " << tool->MarkerTemplatePositions[j].Y() << ",   " << tool->MarkerTemplatePositions[j].Z()<< std::endl;
-        }
-        CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplatePositions[2].X() << ",   " << tool->MarkerTemplatePositions[2].Y() << ",   " << tool->MarkerTemplatePositions[2].Z()<< std::endl;
-*/
+                  }
+                  }
+                  CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [" << j << "]:  " << tool->MarkerTemplatePositions[j].X() << ",   " << tool->MarkerTemplatePositions[j].Y() << ",   " << tool->MarkerTemplatePositions[j].Z()<< std::endl;
+                  }
+                  CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplatePositions[2].X() << ",   " << tool->MarkerTemplatePositions[2].Y() << ",   " << tool->MarkerTemplatePositions[2].Z()<< std::endl;
+        */
     }
 }
 
@@ -539,34 +578,38 @@ void mtsMicronTracker::TrackXPoint(void)
     mtHandle markerHandle;
     char markerName[MT_MAX_STRING_LENGTH];
 
-    MTC( Markers_ProcessFrame(CurrentCamera) );
-    MTC( Markers_IdentifiedMarkersGet(CurrentCamera, IdentifiedMarkers) );
-    const unsigned int numIdentifiedMarkers = Collection_Count(IdentifiedMarkers);
+    MTC(Markers_ProcessFrame(TrackerData->CurrentCamera));
+    MTC(Markers_IdentifiedMarkersGet(TrackerData->CurrentCamera,
+                                     TrackerData->IdentifiedMarkers));
+    const unsigned int numIdentifiedMarkers =
+        Collection_Count(TrackerData->IdentifiedMarkers);
     CMN_LOG_CLASS_RUN_DEBUG << "Track: identified " << numIdentifiedMarkers << " marker(s)" << std::endl;
 
     if (numIdentifiedMarkers != 0) {
         for (unsigned int i = 1; i <= numIdentifiedMarkers; i++) {
-            markerHandle = Collection_Int(IdentifiedMarkers, i);
-            MTC( Marker_NameGet(markerHandle, markerName, MT_MAX_STRING_LENGTH, 0) );
+            markerHandle = Collection_Int(TrackerData->IdentifiedMarkers, i);
+            MTC(Marker_NameGet(markerHandle, markerName, MT_MAX_STRING_LENGTH, 0));
 
             // get the tracking data of template points
             mtHandle IdentifiedFacets = Collection_New();
-            MTC( Marker_IdentifiedFacetsGet(markerHandle, CurrentCamera, false, IdentifiedFacets) );
+            MTC(Marker_IdentifiedFacetsGet(markerHandle,
+                                           TrackerData->CurrentCamera,
+                                           false, IdentifiedFacets));
 
             mtHandle lvHandle = Vector_New();
             mtHandle svHandle = Vector_New();
-            MTC( Facet_IdentifiedVectorsGet(Collection_Int(IdentifiedFacets, 1), lvHandle, svHandle) );
+            MTC(Facet_IdentifiedVectorsGet(Collection_Int(IdentifiedFacets, 1), lvHandle, svHandle));
 
             double endPt[6];
             double endPt1[6];
-            MTC( Vector_EndPosGet(lvHandle, endPt) );
-            MTC( Vector_EndPosGet(svHandle, endPt1) );
+            MTC(Vector_EndPosGet(lvHandle, endPt));
+            MTC(Vector_EndPosGet(svHandle, endPt1));
 
-            for ( unsigned int j = 0; j < 2; j++) {
-                for ( unsigned int k = 0; k < 3; k++) {
+            for (unsigned int j = 0; j < 2; j++) {
+                for (unsigned int k = 0; k < 3; k++) {
                     XPoints[3 * (i-1) + j].at(k) = endPt[3 * j + k];
 
-                    if ( ( (endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2]) ) && ( (endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2]) ) ) {
+                    if (((endPt[0] != endPt1[3 * j]) || (endPt[1] != endPt1[3 * j + 1]) || (endPt[2] != endPt1[3 * j + 2])) && ((endPt[3] != endPt1[3 * j]) || (endPt[4] != endPt1[3 * j + 1]) || (endPt[5] != endPt1[3 * j + 2])) ) {
 
                         XPoints[3*(i-1)+2].at(k) = endPt1[3 * j + k];
 
@@ -577,14 +620,16 @@ void mtsMicronTracker::TrackXPoint(void)
             }
             CMN_LOG_CLASS_RUN_DEBUG << "XPoint[" << 3*(i-1)+2 << "]: " << XPoints[3*(i-1)+2].X() << ",   " << XPoints[3*(i-1)+2].Y() << ",   " << XPoints[3*(i-1)+2].Z() << std::endl;
 
-            for ( unsigned int l = 0; l < 3; l++) {
-                MTC( Camera_ProjectionOnImage(CurrentCamera, LEFT_CAMERA, XPoints[3*(i-1)+l].Pointer(),
-                                              &(XPointsProjectionLeft[3*(i-1)+l].X()),
-                                              &(XPointsProjectionLeft[3*(i-1)+l].Y()) ) );
+            for (unsigned int l = 0; l < 3; l++) {
+                MTC(Camera_ProjectionOnImage(TrackerData->CurrentCamera,
+                                             LEFT_CAMERA, XPoints[3*(i-1)+l].Pointer(),
+                                             &(XPointsProjectionLeft[3*(i-1)+l].X()),
+                                             &(XPointsProjectionLeft[3*(i-1)+l].Y())) );
 
-                MTC( Camera_ProjectionOnImage(CurrentCamera, RIGHT_CAMERA, XPoints[3*(i-1)+l].Pointer(),
-                                              &(XPointsProjectionRight[3*(i-1)+l].X()),
-                                              &(XPointsProjectionRight[3*(i-1)+l].Y()) ) );
+                MTC(Camera_ProjectionOnImage(TrackerData->CurrentCamera,
+                                             RIGHT_CAMERA, XPoints[3*(i-1)+l].Pointer(),
+                                             &(XPointsProjectionRight[3*(i-1)+l].X()),
+                                             &(XPointsProjectionRight[3*(i-1)+l].Y())) );
                 CMN_LOG_CLASS_RUN_DEBUG << "XPoint[" << 3*(i-1)+l << "] left: " << XPointsProjectionLeft[3*(i-1)+l].X() << ",   " << XPointsProjectionLeft[3*(i-1)+l].Y() << std::endl;
                 CMN_LOG_CLASS_RUN_DEBUG << "XPoint[" << 3*(i-1)+l << "] right: " << XPointsProjectionRight[3*(i-1)+l].X() << ",   " << XPointsProjectionRight[3*(i-1)+l].Y() << std::endl;
             }
@@ -592,12 +637,12 @@ void mtsMicronTracker::TrackXPoint(void)
 
             // To get Template data from the markers
             mtHandle TemplateFacets = Collection_New();
-            MTC( Marker_TemplateFacetsGet(markerHandle, &TemplateFacets) );
+            MTC(Marker_TemplateFacetsGet(markerHandle, &TemplateFacets));
 
             mtHandle facetHandle = Collection_Int(TemplateFacets, 1);
 
             double * templatePos = new double[12];
-            MTC( Facet_TemplatePositionsGet(facetHandle, templatePos) );
+            MTC(Facet_TemplatePositionsGet(facetHandle, templatePos));
 
 
             for (unsigned int r = 0; r < 4; r++)
@@ -607,9 +652,9 @@ void mtsMicronTracker::TrackXPoint(void)
 
     mtHandle IdentifiedXPoints = Collection_New();
 
-    MTC( XPoints_ProcessFrame(CurrentCamera) );
+    MTC(XPoints_ProcessFrame(TrackerData->CurrentCamera));
 
-    MTC( XPoints_DetectedXPointsGet(CurrentCamera, IdentifiedXPoints) );
+    MTC(XPoints_DetectedXPointsGet(TrackerData->CurrentCamera, IdentifiedXPoints));
     CMN_LOG_CLASS_RUN_DEBUG << "identified XPoints: " << Collection_Count(IdentifiedXPoints) << std::endl;
 
     for (int i = 0; i < Collection_Count(IdentifiedXPoints); i++) {
@@ -617,16 +662,20 @@ void mtsMicronTracker::TrackXPoint(void)
         // check if tool exists, generate a name and add it otherwise
         mtHandle XPointHandle = Collection_Int(IdentifiedXPoints, i+1);
 
-        MTC ( XPoint_3DPositionGet(XPointHandle, &XPoints[3 * numIdentifiedMarkers + i].X(), &XPoints[3 * numIdentifiedMarkers + i].Y(), &XPoints[3 * numIdentifiedMarkers + i].Z()) );
+        MTC (XPoint_3DPositionGet(XPointHandle, &XPoints[3 * numIdentifiedMarkers + i].X(), &XPoints[3 * numIdentifiedMarkers + i].Y(), &XPoints[3 * numIdentifiedMarkers + i].Z()));
 
         CMN_LOG_CLASS_RUN_DEBUG << " XPoint" << 3 * numIdentifiedMarkers + i  << ": " << XPoints[3 * numIdentifiedMarkers + i].X()  << ", " << XPoints[3 * numIdentifiedMarkers + i].Y() << ", " << XPoints[3 * numIdentifiedMarkers + i].Z() << std::endl;
 
-        MTC( Camera_ProjectionOnImage(CurrentCamera, LEFT_CAMERA, XPoints[3 * numIdentifiedMarkers + i].Pointer(),
-                                      &(XPointsProjectionLeft[3 * numIdentifiedMarkers + i].X()),
-                                      &(XPointsProjectionLeft[3 * numIdentifiedMarkers + i].Y()) ) );
-        MTC( Camera_ProjectionOnImage(CurrentCamera, RIGHT_CAMERA, XPoints[3 * numIdentifiedMarkers + i].Pointer(),
-                                      &(XPointsProjectionRight[3 * numIdentifiedMarkers + i].X()),
-                                      &(XPointsProjectionRight[3 * numIdentifiedMarkers + i].Y()) ) );
+        MTC(Camera_ProjectionOnImage(TrackerData->CurrentCamera,
+                                     LEFT_CAMERA,
+                                     XPoints[3 * numIdentifiedMarkers + i].Pointer(),
+                                     &(XPointsProjectionLeft[3 * numIdentifiedMarkers + i].X()),
+                                     &(XPointsProjectionLeft[3 * numIdentifiedMarkers + i].Y())) );
+        MTC(Camera_ProjectionOnImage(TrackerData->CurrentCamera,
+                                     RIGHT_CAMERA,
+                                     XPoints[3 * numIdentifiedMarkers + i].Pointer(),
+                                     &(XPointsProjectionRight[3 * numIdentifiedMarkers + i].X()),
+                                     &(XPointsProjectionRight[3 * numIdentifiedMarkers + i].Y())) );
         CMN_LOG_CLASS_RUN_DEBUG << "XPoint[" << 3 * numIdentifiedMarkers + i << "] left: " << XPointsProjectionLeft[3 * numIdentifiedMarkers + i].X() << ",   " << XPointsProjectionLeft[3 * numIdentifiedMarkers + i].Y() << std::endl;
         CMN_LOG_CLASS_RUN_DEBUG << "XPoint[" << 3 * numIdentifiedMarkers + i << "] right: " << XPointsProjectionRight[3 * numIdentifiedMarkers + i].X() << ",   " << XPointsProjectionRight[3 * numIdentifiedMarkers + i].Y() << std::endl;
     }
@@ -642,8 +691,8 @@ void mtsMicronTracker::ComputeCameraModel(const std::string & pathRectificationL
     int retval;
     calRay ray;
 
-    MTC( Markers_ProcessFrame(CurrentCamera) );
-    MTC( Camera_ResolutionGet(CurrentCamera, &resolutionX, &resolutionY) );
+    MTC(Markers_ProcessFrame(CurrentCamera));
+    MTC(Camera_ResolutionGet(CurrentCamera, &resolutionX, &resolutionY));
 
     vct2 imageCenterPX(resolutionX / 2.0, resolutionY / 2.0);
     double imagePlaneZ = 1500.0;
@@ -705,13 +754,13 @@ void mtsMicronTracker::ComputeCameraModel(const std::string & pathRectificationL
         cameraOriginMM[i] = temp1[i];
     }
 
-//    vctVec temp2(ray_dir_2D.size());
-//    vct2 solution2;
-//    nmrLSqLin(I, ray_dir_2D, temp2);
-//    for (unsigned int i = 2; i < 4; i++) {
-//        solution2[i] = temp2[i];
-//    }
-//    CMN_LOG_CLASS_RUN_WARNING << "ComputeCameraModel: direction of the ray at image center:\n" << solution2 << std::endl;
+    //    vctVec temp2(ray_dir_2D.size());
+    //    vct2 solution2;
+    //    nmrLSqLin(I, ray_dir_2D, temp2);
+    //    for (unsigned int i = 2; i < 4; i++) {
+    //        solution2[i] = temp2[i];
+    //    }
+    //    CMN_LOG_CLASS_RUN_WARNING << "ComputeCameraModel: direction of the ray at image center:\n" << solution2 << std::endl;
 
     vctVec temp3(Q_2D.size());
     vct2 pixelSizeMM;
