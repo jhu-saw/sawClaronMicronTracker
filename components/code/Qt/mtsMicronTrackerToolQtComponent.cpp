@@ -2,11 +2,10 @@
 /* ex: set filetype=cpp softtabstop=4 shiftwidth=4 tabstop=4 cindent expandtab: */
 
 /*
-
   Author(s):  Ali Uneri
   Created on: 2009-10-27
 
-  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2018 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -20,7 +19,6 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstVector/vctFixedSizeVectorTypes.h>
 #include <cisstMultiTask/mtsInterfaceRequired.h>
 #include <sawClaronMicronTracker/mtsMicronTrackerToolQtComponent.h>
-#include <ui_mtsMicronTrackerToolQtWidget.h>
 
 #include <QDir>
 #include <QString>
@@ -31,10 +29,8 @@ CMN_IMPLEMENT_SERVICES(mtsMicronTrackerToolQtComponent);
 mtsMicronTrackerToolQtComponent::mtsMicronTrackerToolQtComponent(const std::string & taskName) :
     mtsComponent(taskName)
 {
-    ToolWidget = new Ui::mtsMicronTrackerToolQtWidget();
-    ToolWidget->setupUi(&CentralWidget);
-    ToolWidget->ToolGroup->setTitle(QString::fromStdString(taskName));
-    CentralWidget.setWindowTitle(QString::fromStdString(taskName));
+    ToolWidget = new prmPositionCartesianGetQtWidget();
+    ToolWidget->setWindowTitle(QString::fromStdString(taskName));
 
     MTC.MarkerProjectionLeft.SetSize(2);
     MTC.MarkerProjectionRight.SetSize(2);
@@ -45,10 +41,6 @@ mtsMicronTrackerToolQtComponent::mtsMicronTrackerToolQtComponent(const std::stri
         required->AddFunction("GetMarkerProjectionLeft", MTC.GetMarkerProjectionLeft);
         required->AddFunction("GetMarkerProjectionRight", MTC.GetMarkerProjectionRight);
     }
-
-    // connect Qt signals to slots
-    QObject::connect(ToolWidget->ButtonRecord, SIGNAL(clicked()),
-                     this, SLOT(RecordQSlot()));
 }
 
 
@@ -58,35 +50,17 @@ void mtsMicronTrackerToolQtComponent::UpdatePositionCartesian()
     MTC.GetMarkerProjectionLeft(MTC.MarkerProjectionLeft);
     MTC.GetMarkerProjectionRight(MTC.MarkerProjectionRight);
 
-    
+    ToolWidget->SetValue(MTC.PositionCartesian);
+
     if (MTC.PositionCartesian.Valid()) {
-        ToolWidget->PositionX->setNum(MTC.PositionCartesian.Position().Translation().X());
-        ToolWidget->PositionY->setNum(MTC.PositionCartesian.Position().Translation().Y());
-        ToolWidget->PositionZ->setNum(MTC.PositionCartesian.Position().Translation().Z());
         MarkerProjectionLeft.setX(MTC.MarkerProjectionLeft.X());
         MarkerProjectionLeft.setY(MTC.MarkerProjectionLeft.Y());
         MarkerProjectionRight.setX(MTC.MarkerProjectionRight.X());
         MarkerProjectionRight.setY(MTC.MarkerProjectionRight.Y());
     } else {
-        ToolWidget->PositionX->setNum(0.0);
-        ToolWidget->PositionY->setNum(0.0);
-        ToolWidget->PositionZ->setNum(0.0);
         MarkerProjectionLeft.setX(0.0);
         MarkerProjectionLeft.setY(0.0);
         MarkerProjectionRight.setX(0.0);
         MarkerProjectionRight.setY(0.0);;
     }
-}
-
-
-void mtsMicronTrackerToolQtComponent::RecordQSlot(void)
-{
-    QString path = QDir::currentPath() + "/CollectedPoints.csv";
-    std::ofstream file;
-    file.open(path.toStdString().c_str(), std::ios::app);
-    file << MTC.PositionCartesian.Timestamp() << ", "
-         << MTC.PositionCartesian.Position().Translation().X() << ", "
-         << MTC.PositionCartesian.Position().Translation().Y() << ", "
-         << MTC.PositionCartesian.Position().Translation().Z() << std::endl;
-    file.close();
 }

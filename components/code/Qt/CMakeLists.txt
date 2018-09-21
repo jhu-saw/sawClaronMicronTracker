@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2014-2016 Johns Hopkins University (JHU), All Rights Reserved.
+# (C) Copyright 2014-2018 Johns Hopkins University (JHU), All Rights Reserved.
 #
 # --- begin cisst license - do not edit ---
 #
@@ -35,8 +35,7 @@ if (cisst_FOUND_AS_REQUIRED)
                   ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerControllerQtComponent.h
                   ${sawClaronMicronTracker_HEADER_DIR}/mtsMicronTrackerToolQtComponent.h)
     qt4_wrap_ui (QT_WRAPPED_UI
-                 mtsMicronTrackerControllerQtWidget.ui
-                 mtsMicronTrackerToolQtWidget.ui)
+                 mtsMicronTrackerControllerQtWidget.ui)
   else (CISST_HAS_QT4)
     set (CMAKE_AUTOMOC ON) # This is to generate appropriate .moc files (for .h)
     set (CMAKE_AUTOUIC ON) # This is to generate appropriate .uic files (for .ui)

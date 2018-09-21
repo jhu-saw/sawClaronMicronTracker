@@ -2,11 +2,10 @@
 /* ex: set filetype=cpp softtabstop=4 shiftwidth=4 tabstop=4 cindent expandtab: */
 
 /*
-
-  Author(s):  Ali Uneri
+  Author(s):  Ali Uneri, Anton Deguet
   Created on: 2009-10-27
 
-  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2018 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -26,12 +25,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstMultiTask/mtsComponent.h>
 #include <cisstMultiTask/mtsFunctionRead.h>
 #include <cisstMultiTask/mtsVector.h>
-#include <cisstParameterTypes/prmPositionCartesianGet.h>
+#include <cisstParameterTypes/prmPositionCartesianGetQtWidget.h>
 #include <sawClaronMicronTracker/sawClaronMicronTrackerExportQt.h>  // always include last
-
-namespace Ui {
-    class mtsMicronTrackerToolQtWidget;
-}
 
 class CISST_EXPORT mtsMicronTrackerToolQtComponent : public QObject, public mtsComponent
 {
@@ -45,7 +40,7 @@ class CISST_EXPORT mtsMicronTrackerToolQtComponent : public QObject, public mtsC
     void Configure(const std::string & CMN_UNUSED(filename) = "") {};
 
     QWidget * GetWidget(void) {
-        return &CentralWidget;
+        return ToolWidget;
     }
     QPoint * GetMarkerProjectionLeft(void) {
         return &MarkerProjectionLeft;
@@ -55,29 +50,25 @@ class CISST_EXPORT mtsMicronTrackerToolQtComponent : public QObject, public mtsC
     }
 
  protected:
-    Ui::mtsMicronTrackerToolQtWidget * ToolWidget;
-    QWidget CentralWidget;
+    prmPositionCartesianGetQtWidget * ToolWidget;
 
     struct {
         mtsFunctionRead GetPositionCartesian;
         mtsFunctionRead GetMarkerProjectionLeft;
         mtsFunctionRead GetMarkerProjectionRight;
         mtsFunctionRead GetMarkerTemplateTrackingPositions;
-        
+
         prmPositionCartesianGet PositionCartesian;
         mtsDoubleVec MarkerProjectionLeft;
         mtsDoubleVec MarkerProjectionRight;
         std::vector<vct3> MarkerTemplateTrackingPositions;
-        
     } MTC;
 
     QPoint MarkerProjectionLeft;
     QPoint MarkerProjectionRight;
 
-
  public slots:
     void UpdatePositionCartesian();
-    void RecordQSlot(void);
 };
 
 CMN_DECLARE_SERVICES_INSTANTIATION(mtsMicronTrackerToolQtComponent);
