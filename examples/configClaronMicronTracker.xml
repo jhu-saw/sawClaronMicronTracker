@@ -5,8 +5,8 @@
     calibration: directory containing camera calibration file
     markers: directory containing marker definitions
   -->
-  <controller calibration="/home/pchalas1/Downloads/MicronTracker3.7.2.3_Linux_Release/CalibrationFiles"
-              markers="/home/pchalas1/Downloads/MicronTracker3.7.2.3_Linux_Release/Markers"/>
+  <controller calibration="/home/adeguet1/MicronTracker3.7.2.3_Linux_Release/CalibrationFiles"
+              markers="/home/adeguet1/MicronTracker3.7.2.3_Linux_Release/Markers"/>
 
   <!-- list of tools used -->
   <!-- tool properties
@@ -15,11 +15,11 @@
     -->
   <tools>
     <tool name="TT" marker="TTblock" />
-    <tool name="A" marker="a" />        
+    <tool name="A" marker="a" />
   </tools>
-  
-  <xpoints>      
-    <xpoint max_number="4" />      
+
+  <xpoints>
+    <xpoint max_number="4" />
   </xpoints>
-      
+
 </tracker>

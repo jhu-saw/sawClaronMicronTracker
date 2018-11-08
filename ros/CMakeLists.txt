@@ -33,6 +33,7 @@ set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstNumerical
                               cisstOSAbstraction
                               cisstMultiTask
+                              cisstMultiTaskQt
                               cisstParameterTypes)
 
 # find cisst and make sure the required libraries have been compiled

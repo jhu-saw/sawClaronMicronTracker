@@ -31,7 +31,7 @@ CMN_IMPLEMENT_SERVICES_DERIVED_ONEARG(mtsMicronTracker, mtsTaskPeriodic, mtsTask
 #define MTC(func) {                                                     \
         int retval = func;                                              \
         if (retval != mtOK) {                                           \
-            CMN_LOG_CLASS_RUN_ERROR << "MTC: " << MTLastErrorString() << std::endl; \
+            ControllerInterface->SendError(this->GetName() + ": MTC error " + MTLastErrorString()); \
         }                                                               \
     };
 
@@ -94,22 +94,31 @@ void mtsMicronTracker::Construct(void)
     ImageTable->AddData(ImageLeft, "ImageLeft");
     ImageTable->AddData(ImageRight, "ImageRight");
 
-    mtsInterfaceProvided * provided = AddInterfaceProvided("Controller");
-    if (provided) {
-        provided->AddCommandWrite(&mtsMicronTracker::ToggleCapturing, this, "ToggleCapturing");
-        provided->AddCommandWrite(&mtsMicronTracker::ToggleTracking, this, "ToggleTracking");
-        provided->AddCommandReadState(StateTable, IsCapturing, "IsCapturing");
-        provided->AddCommandReadState(StateTable, IsTracking, "IsTracking");
-        provided->AddCommandReadState(StateTable, XPointsMaxNum, "GetXPointsMaxNum");
-        provided->AddCommandReadState(StateTable, XPoints, "GetXPoints");
-        provided->AddCommandReadState(StateTable, XPointsProjectionLeft, "GetXPointsProjectionLeft");
-        provided->AddCommandReadState(StateTable, XPointsProjectionRight, "GetXPointsProjectionRight");
-        provided->AddCommandReadState(*ImageTable, ImageLeft, "GetCameraFrameLeft");
-        provided->AddCommandReadState(*ImageTable, ImageRight, "GetCameraFrameRight");
-        provided->AddCommandWrite(&mtsMicronTracker::ComputeCameraModel, this, "ComputeCameraModel");
-        provided->AddCommandWrite(&mtsMicronTracker::SetJitterFilterEnabled, this, "SetJitterFilterEnabled", mtsBool());
-        provided->AddCommandWrite(&mtsMicronTracker::SetJitterCoefficient, this, "SetJitterCoefficient");
-        provided->AddCommandWrite(&mtsMicronTracker::SetKalmanFilterEnabled, this, "SetKalmanFilterEnabled", mtsBool());
+    ControllerInterface = AddInterfaceProvided("Controller");
+    if (ControllerInterface) {
+        ControllerInterface->AddMessageEvents();
+        ControllerInterface->AddCommandWrite(&mtsMicronTracker::ToggleCapturing, this,
+                                             "ToggleCapturing");
+        ControllerInterface->AddCommandWrite(&mtsMicronTracker::ToggleTracking, this,
+                                             "ToggleTracking");
+        ControllerInterface->AddCommandReadState(StateTable, IsCapturing, "IsCapturing");
+        ControllerInterface->AddCommandReadState(StateTable, IsTracking, "IsTracking");
+        ControllerInterface->AddCommandReadState(StateTable, XPointsMaxNum, "GetXPointsMaxNum");
+        ControllerInterface->AddCommandReadState(StateTable, XPoints, "GetXPoints");
+        ControllerInterface->AddCommandReadState(StateTable, XPointsProjectionLeft, "GetXPointsProjectionLeft");
+        ControllerInterface->AddCommandReadState(StateTable, XPointsProjectionRight, "GetXPointsProjectionRight");
+        ControllerInterface->AddCommandReadState(*ImageTable, ImageLeft, "GetCameraFrameLeft");
+        ControllerInterface->AddCommandReadState(*ImageTable, ImageRight, "GetCameraFrameRight");
+        ControllerInterface->AddCommandWrite(&mtsMicronTracker::ComputeCameraModel, this,
+                                             "ComputeCameraModel");
+        ControllerInterface->AddCommandWrite(&mtsMicronTracker::SetJitterFilterEnabled, this,
+                                             "SetJitterFilterEnabled", mtsBool());
+        ControllerInterface->AddCommandWrite(&mtsMicronTracker::SetJitterCoefficient, this,
+                                             "SetJitterCoefficient");
+        ControllerInterface->AddCommandWrite(&mtsMicronTracker::SetKalmanFilterEnabled, this,
+                                             "SetKalmanFilterEnabled", mtsBool());
+        ControllerInterface->AddCommandReadState(StateTable, StateTable.PeriodStats,
+                                                 "GetPeriodStatistics");
     }
 }
 
@@ -335,7 +344,7 @@ void mtsMicronTracker::Run(void)
     mtMeasurementHazardCode hazardCode =
         Camera_LastFrameThermalHazard(TrackerData->CurrentCamera);
     if (hazardCode == mtCameraWarmingUp) {
-        CMN_LOG_CLASS_RUN_WARNING << "Camera is not yet thermally stable." << std::endl;
+        ControllerInterface->SendWarning(this->GetName() + ": camera is not yet thermally stable.");
     }
     //    else if (hazardCode != mtCameraWarmingUp)
     //        std::cout << "Camera is thermally stable." << std::endl;

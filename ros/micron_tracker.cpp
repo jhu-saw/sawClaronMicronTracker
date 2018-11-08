@@ -2,11 +2,10 @@
 /* ex: set filetype=cpp softtabstop=4 shiftwidth=4 tabstop=4 cindent expandtab: */
 
 /*
-
   Author(s):  Ali Uneri
   Created on: 2009-11-06
 
-  (C) Copyright 2009-2012 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2018 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -26,10 +25,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstCommon/cmnPath.h>
 #include <cisstCommon/cmnUnits.h>
 #include <cisstCommon/cmnCommandLineOptions.h>
-#include <cisstOSAbstraction/osaThreadedLogFile.h>
-#include <cisstOSAbstraction/osaSleep.h>
-#include <cisstMultiTask/mtsCollectorState.h>
 #include <cisstMultiTask/mtsTaskManager.h>
+#include <cisstMultiTask/mtsSystemQtWidget.h>
 #include <sawClaronMicronTracker/mtsMicronTracker.h>
 #include <sawClaronMicronTracker/mtsMicronTrackerControllerQtComponent.h>
 #include <sawClaronMicronTracker/mtsMicronTrackerToolQtComponent.h>
@@ -132,17 +129,24 @@ int main(int argc, char * argv[])
                                   tracker->GetName(), toolName);
     }
 
-    // create and start all components
-    componentManager->CreateAllAndWait(5.0 * cmn_s);
-    componentManager->StartAllAndWait(5.0 * cmn_s);
-
-
     // create a main window to hold QWidgets
     QMainWindow * mainWindow = new QMainWindow();
     mainWindow->setCentralWidget(trackerWidget->GetWidget());
     mainWindow->setWindowTitle("MicronTracker Controller");
     mainWindow->resize(0,0);
     mainWindow->show();
+
+    mtsSystemQtWidgetComponent * systemWidget
+        = new mtsSystemQtWidgetComponent("MTC-System");
+    systemWidget->Configure();
+    componentManager->AddComponent(systemWidget);
+    componentManager->Connect(systemWidget->GetName(), "Component",
+                              tracker->GetName(), "Controller");
+    trackerWidget->GetWidget()->layout()->addWidget(systemWidget);
+
+    // create and start all components
+    componentManager->CreateAllAndWait(5.0 * cmn_s);
+    componentManager->StartAllAndWait(5.0 * cmn_s);
 
     // run Qt user interface
     application.exec();

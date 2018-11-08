@@ -98,7 +98,8 @@ public:
 
 protected:
     mtsMicronTrackerData * TrackerData;
-    
+    mtsInterfaceProvided * ControllerInterface;
+
     enum { LEFT_CAMERA, RIGHT_CAMERA, MIDDLE_CAMERA };
 
     Tool * CheckTool(const std::string & serialNumber);
