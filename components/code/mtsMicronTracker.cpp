@@ -123,6 +123,12 @@ void mtsMicronTracker::Construct(void)
 }
 
 
+void mtsMicronTracker::Startup(void)
+{
+    MarkAllToolsNotVisible();
+}
+
+
 void mtsMicronTracker::Configure(const std::string & filename)
 {
     CMN_LOG_CLASS_INIT_VERBOSE << "Configure: using " << filename << std::endl;
@@ -188,6 +194,18 @@ void mtsMicronTracker::SetKalmanFilterEnabled(const mtsBool & flag)
         std::cout << "Kalman filter is disabled" << std::endl;
 }
 
+void mtsMicronTracker::MarkAllToolsNotVisible(void)
+{
+    ToolsType::const_iterator toolIterator;
+    const ToolsType::const_iterator end = Tools.end();
+    for (toolIterator = Tools.begin(); toolIterator != end; ++toolIterator) {
+        Tool * tool = toolIterator->second;
+        tool->VisibleEvent(false);
+        tool->Visible = false;
+        tool->TooltipPosition.SetValid(false);
+    }
+}
+
 mtsMicronTracker::Tool * mtsMicronTracker::CheckTool(const std::string & serialNumber)
 {
     const ToolsType::const_iterator end = Tools.end();
@@ -236,6 +254,7 @@ mtsMicronTracker::Tool * mtsMicronTracker::AddTool(const std::string & name, con
             tool->Interface->AddCommandReadState(StateTable, tool->MarkerProjectionRight, "GetMarkerProjectionRight");
             tool->Interface->AddCommandReadState(StateTable, tool->MarkerTemplatePositions, "GetMarkerTemplatePositions");
             tool->Interface->AddCommandReadState(StateTable, tool->MarkerTemplateTrackingPositions, "GetMarkerTemplateTrackingPositions");
+            tool->Interface->AddEventWrite(tool->VisibleEvent, "Visible", false);
         }
     }
     return tool;
@@ -358,6 +377,8 @@ void mtsMicronTracker::Run(void)
 
 void mtsMicronTracker::Cleanup(void)
 {
+    MarkAllToolsNotVisible();
+
     MTC(Collection_Free(TrackerData->IdentifiedMarkers));
     MTC(Xform3D_Free(TrackerData->PoseXf));
     MTC(Persistence_Free(TrackerData->Path));
@@ -384,6 +405,7 @@ void mtsMicronTracker::ToggleTracking(const bool & toggle)
         CMN_LOG_CLASS_INIT_VERBOSE << "ToggleTracking: tracking is on" << std::endl;
     } else {
         IsTracking = false;
+        MarkAllToolsNotVisible();
         CMN_LOG_CLASS_INIT_VERBOSE << "ToggleTracking: tracking is off" << std::endl;
     }
 }
@@ -481,7 +503,7 @@ void mtsMicronTracker::Track(void)
                                          LEFT_CAMERA, tipPosition.Pointer(),
                                          &(tool->MarkerProjectionLeft.X()),
                                          &(tool->MarkerProjectionLeft.Y())));
-            
+
             MTC(Camera_ProjectionOnImage(TrackerData->CurrentCamera,
                                          RIGHT_CAMERA, tipPosition.Pointer(),
                                          &(tool->MarkerProjectionRight.X()),
@@ -576,6 +598,14 @@ void mtsMicronTracker::Track(void)
                   }
                   CMN_LOG_CLASS_RUN_DEBUG << "Traking Template Data (" << tool->Name << ") [2]:  " << tool->MarkerTemplatePositions[2].X() << ",   " << tool->MarkerTemplatePositions[2].Y() << ",   " << tool->MarkerTemplatePositions[2].Z()<< std::endl;
         */
+    }
+
+    for (toolIterator = Tools.begin(); toolIterator != end; ++toolIterator) {
+        Tool * tool = toolIterator->second;
+        if (tool->Visible != tool->TooltipPosition.Valid()) {
+            tool->Visible = tool->TooltipPosition.Valid();
+            tool->VisibleEvent(tool->Visible);
+        }
     }
 }
 
@@ -904,7 +934,8 @@ void mtsMicronTracker::ComputeCameraModel(const std::string & pathRectificationL
 
 
 mtsMicronTracker::Tool::Tool(void) :
-    TooltipOffset(0.0)
+    TooltipOffset(0.0),
+    Visible(false)
 {
     TooltipPosition.SetValid(false);
     MarkerProjectionLeft.SetSize(2);

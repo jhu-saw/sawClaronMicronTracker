@@ -66,6 +66,7 @@ protected:
         std::string SerialNumber;
         mtsInterfaceProvided * Interface;
         prmPositionCartesianGet TooltipPosition;
+        bool Visible;
         prmPositionCartesianGet MarkerPosition;
         mtsDoubleVec MarkerProjectionLeft;
         mtsDoubleVec MarkerProjectionRight;
@@ -76,6 +77,7 @@ protected:
         std::vector<vct3> MarkerTemplateProjectionRight;
 
         vct3 TooltipOffset;
+        mtsFunctionWrite VisibleEvent;
     };
 
 public:
@@ -88,6 +90,7 @@ public:
     void Construct(void);
     void Configure(const std::string & filename = "");
     void StartCameras(void);
+    void Startup(void);
     void Run(void);
     void Cleanup(void);
 
@@ -115,6 +118,7 @@ protected:
     void SetJitterFilterEnabled(const mtsBool & flag);
     void SetJitterCoefficient(const double & coefficient);
     void SetKalmanFilterEnabled(const mtsBool & flag);
+    void MarkAllToolsNotVisible(void);
 
     int FrameWidth;
     int FrameHeight;

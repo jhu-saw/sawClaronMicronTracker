@@ -25,6 +25,8 @@ http://www.cisst.org/cisst/license.txt.
 #include <cisstCommon/cmnPath.h>
 #include <cisstCommon/cmnUnits.h>
 #include <cisstCommon/cmnCommandLineOptions.h>
+#include <cisstCommon/cmnQt.h>
+#include <cisstOSAbstraction/osaSleep.h>
 #include <cisstMultiTask/mtsTaskManager.h>
 #include <cisstMultiTask/mtsSystemQtWidget.h>
 #include <sawClaronMicronTracker/mtsMicronTracker.h>
@@ -112,11 +114,14 @@ int main(int argc, char * argv[])
         componentManager->Connect(toolName, toolName,
                                   tracker->GetName(), toolName);
 
-        std::string topicName = toolName;
-        std::replace(topicName.begin(), topicName.end(), '-', '_');
+        std::string nameSpace = toolName;
+        std::replace(nameSpace.begin(), nameSpace.end(), '-', '_');
         rosBridge->AddPublisherFromCommandRead<prmPositionCartesianGet, geometry_msgs::PoseStamped>
                 (toolName, "GetPositionCartesian",
-                 "/micron/" + topicName);
+                 "/micron/" + nameSpace + "/measured_cp");
+        rosBridge->AddPublisherFromEventWrite<bool, std_msgs::Bool>
+                (toolName, "Visible",
+                 "/micron/" + nameSpace + "/measured_cp_valid");
     }
 
     // add the bridge after all interfaces have been created
@@ -149,7 +154,12 @@ int main(int argc, char * argv[])
     componentManager->StartAllAndWait(5.0 * cmn_s);
 
     // run Qt user interface
+    cmnQt::QApplicationExitsOnCtrlC();
     application.exec();
+
+    // kill the micron tracker
+    tracker->Kill();
+    osaSleep(10 * rosPeriod); // to make sure the bridge has time to publish
 
     // kill all components and perform cleanup
     componentManager->KillAllAndWait(5.0 * cmn_s);
