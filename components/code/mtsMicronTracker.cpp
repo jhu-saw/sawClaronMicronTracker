@@ -384,7 +384,7 @@ void mtsMicronTracker::Run(void)
         }
     }
     // something else, i.e. camera should be stable
-    else if (hazardCode != mtCameraWarmingUp) {
+    else {
         if (!CameraIsThermallyStable) {
             ControllerInterface->SendWarning(this->GetName() + ": camera thermally stable.");
             CameraIsThermallyStable = true;
