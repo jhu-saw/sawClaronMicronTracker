@@ -5,7 +5,7 @@
   Author(s):  Ali Uneri
   Created on: 2009-11-06
 
-  (C) Copyright 2009-2018 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -131,6 +131,9 @@ protected:
 
     bool IsCapturing;
     bool IsTracking;
+
+    bool CameraIsThermallyStable;
+    double CameraIsThermallyStableTimer;
 
     int XPointsMaxNum;
     std::vector<vct3> XPoints;

@@ -5,7 +5,7 @@
   Author(s):  Ali Uneri
   Created on: 2009-11-06
 
-  (C) Copyright 2009-2018 Johns Hopkins University (JHU), All Rights Reserved.
+  (C) Copyright 2009-2019 Johns Hopkins University (JHU), All Rights Reserved.
 
 --- begin cisst license - do not edit ---
 
@@ -80,6 +80,8 @@ void mtsMicronTracker::Construct(void)
 
     IsCapturing = false;
     IsTracking = false;
+    CameraIsThermallyStable = false;
+    CameraIsThermallyStableTimer = 0.0;
 
     StateTable.AddData(IsCapturing, "IsCapturing");
     StateTable.AddData(IsTracking, "IsTracking");
@@ -142,7 +144,7 @@ void mtsMicronTracker::Configure(const std::string & filename)
     // add tools
     int numberOfTools = 0;
     config.Query("count(/tracker/tools/*)", numberOfTools);
-    std::string toolName, toolSerial, toolDefinition;
+    std::string toolName, toolSerial;
 
     for (int i = 0; i < numberOfTools; i++) {
         std::stringstream context;
@@ -362,11 +364,32 @@ void mtsMicronTracker::Run(void)
     }
     mtMeasurementHazardCode hazardCode =
         Camera_LastFrameThermalHazard(TrackerData->CurrentCamera);
+    // camera NOT stable
     if (hazardCode == mtCameraWarmingUp) {
-        ControllerInterface->SendWarning(this->GetName() + ": camera is not yet thermally stable.");
+        const double currentTime = this->StateTable.GetTic();
+        bool sendWarning = false;
+        if (CameraIsThermallyStable) {
+            sendWarning = true;
+            CameraIsThermallyStable = false;
+        } else {
+            // throttle to one message per minute
+            if (currentTime - CameraIsThermallyStableTimer > 60.0 * cmn_s) {
+                sendWarning = true;
+            }
+        }
+        // finally send warning and update timer
+        if (sendWarning) {
+            ControllerInterface->SendWarning(this->GetName() + ": camera is not yet thermally stable.");
+            CameraIsThermallyStableTimer = currentTime;
+        }
     }
-    //    else if (hazardCode != mtCameraWarmingUp)
-    //        std::cout << "Camera is thermally stable." << std::endl;
+    // something else, i.e. camera should be stable
+    else if (hazardCode != mtCameraWarmingUp) {
+        if (!CameraIsThermallyStable) {
+            ControllerInterface->SendWarning(this->GetName() + ": camera thermally stable.");
+            CameraIsThermallyStable = true;
+        }
+    }
 
     if (IsTracking) {
         Track();
