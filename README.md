@@ -43,3 +43,23 @@ Don't forget to hit "Generate" before quitting CMake.  You should now be able to
 
 
 # Running the examples
+
+## ROS example
+
+Go to the folder where you have your XML configuration file.  For example:
+```sh
+roscd saw_claron_micron_tracker/../examples/
+```
+
+Then start the ROS node with the `-x` option to specify the XML configuration file:
+```
+rosrun micron_tracker_ros micron_tracker -x configClaronMicronTracker.xml
+```
+
+You will likely have to edit the main XML configuration file to update
+the directories where your calibration files are located.
+
+If the tracker is properly configured and connected, you can click on
+the "Track" button to start tracking.  At that point, you can use
+`rostopic list` to find which data is published and `rostopic echo` to
+visualize it.

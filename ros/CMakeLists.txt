@@ -37,7 +37,7 @@ set (REQUIRED_CISST_LIBRARIES cisstCommon
                               cisstParameterTypes)
 
 # find cisst and make sure the required libraries have been compiled
-find_package (cisst 1.0.9 REQUIRED ${REQUIRED_CISST_LIBRARIES})
+find_package (cisst 1.0.11 REQUIRED ${REQUIRED_CISST_LIBRARIES})
 
 if (cisst_FOUND)
 
@@ -53,7 +53,7 @@ if (cisst_FOUND)
                   CATKIN_DEPENDS cisst_ros_bridge geometry_msgs roscpp std_msgs)
 
   # sawClaronMicronTracker has been compiled within cisst, we should find it automatically
-  find_package (sawClaronMicronTracker 1.0.0)
+  find_package (sawClaronMicronTracker 1.1.0)
 
   if (sawClaronMicronTracker_FOUND)
 
